@@ -235,6 +235,19 @@ header{background:var(–ink);color:#fff;height:52px;display:flex;align-items:ce
 .apist{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;padding:.25rem .6rem;border-radius:20px;}
 .apist.ok{background:#e8f5e9;color:#2e7d32;}.apist.no{background:#ffebee;color:#c62828;}
 
+/* ── 원생 상태 배지 ── */
+.status-active{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;}
+.status-pause{background:#fff8e1;color:#f57f17;border:1px solid #ffe082;}
+.status-out{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;}
+.status-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:20px;font-size:.65rem;font-weight:700;}
+.timeline-item{display:flex;gap:.7rem;padding:.55rem 0;border-bottom:1px dotted var(–border);align-items:flex-start;}
+.timeline-item:last-child{border-bottom:none;}
+.timeline-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:.25rem;}
+.dot-out{background:var(–red);}.dot-pause{background:var(–gold);}.dot-resume{background:var(–sage);}.dot-change{background:var(–blue);}.dot-makeup{background:#9c27b0;}
+.tl-content{flex:1;}
+.tl-title{font-size:.78rem;font-weight:700;margin-bottom:.1rem;}
+.tl-desc{font-size:.68rem;color:var(–muted);}
+.tl-date{font-size:.63rem;color:var(–muted);margin-top:.1rem;}
 /* ── 오버레이/토스트 ── */
 #ov{display:none;position:fixed;inset:0;z-index:600;background:rgba(26,26,46,.94);backdrop-filter:blur(6px);flex-direction:column;align-items:center;justify-content:center;gap:.9rem;color:#fff;text-align:center;}
 #ov.show{display:flex;}
@@ -346,6 +359,17 @@ header{background:var(–ink);color:#fff;height:52px;display:flex;align-items:ce
   <!-- 원생 목록 -->
 
   <div id="st-list">
+    <!-- 상태 필터 탭 -->
+    <div style="display:flex;gap:.4rem;margin-bottom:.7rem;overflow-x:auto;padding-bottom:.2rem;">
+      <button class="btn btn-sm stu-filter on" data-filter="all" onclick="setStuFilter('all',this)"
+        style="white-space:nowrap;background:var(--ink);color:#fff;border:none;">전체 <span id="cnt-all"></span></button>
+      <button class="btn btn-sm stu-filter" data-filter="active" onclick="setStuFilter('active',this)"
+        style="white-space:nowrap;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;">수강중 <span id="cnt-active"></span></button>
+      <button class="btn btn-sm stu-filter" data-filter="pause" onclick="setStuFilter('pause',this)"
+        style="white-space:nowrap;background:#fff8e1;color:#f57f17;border:1px solid #ffe082;">휴강중 <span id="cnt-pause"></span></button>
+      <button class="btn btn-sm stu-filter" data-filter="out" onclick="setStuFilter('out',this)"
+        style="white-space:nowrap;background:#ffebee;color:#c62828;border:1px solid #ef9a9a;">퇴원 <span id="cnt-out"></span></button>
+    </div>
     <div style="margin-bottom:.8rem;display:flex;gap:.5rem;">
       <input id="stu-q" class="inp" style="flex:1;" placeholder="🔍 원생 이름 검색" oninput="renderStudents()">
       <button class="btn btn-b btn-sm" onclick="openAddStu()">+ 등록</button>
@@ -461,7 +485,16 @@ header{background:var(–ink);color:#fff;height:52px;display:flex;align-items:ce
     <div class="card"><div class="ctitle">학원 정보</div>
       <div class="fg"><label>학원명</label><input type="text" id="cfg-nm" class="inp"></div>
       <div class="fg"><label>전화번호</label><input type="text" id="cfg-ph" class="inp" placeholder="053-000-0000"></div>
-      <div class="fg"><label>월 수강료 기본액</label><input type="number" id="cfg-fee" class="inp" placeholder="150000"></div>
+      <div style="background:var(--pale);border-radius:8px;padding:.8rem;margin-bottom:.5rem;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">수강료 기준표</div>
+        <table class="tbl" style="font-size:.72rem;">
+          <tr><td>주 1회</td><td style="font-weight:700;color:var(--blue);">110,000원/월</td></tr>
+          <tr><td>주 2회</td><td style="font-weight:700;color:var(--blue);">130,000원/월</td></tr>
+          <tr><td>주 3회</td><td style="font-weight:700;color:var(--blue);">150,000원/월</td></tr>
+          <tr><td>취미반 주 3회</td><td style="font-weight:700;color:var(--blue);">160,000원/월</td></tr>
+          <tr><td>형제 할인</td><td style="font-weight:700;color:var(--accent);">-5,000원/명</td></tr>
+        </table>
+      </div>
       <button class="btn btn-p btn-sm" onclick="saveCfg()">저장</button>
     </div>
     <div class="card"><div class="ctitle">Google Sheets 연동</div>
@@ -527,6 +560,69 @@ header{background:var(–ink);color:#fff;height:52px;display:flex;align-items:ce
 
 </div><!-- /main-app -->
 
+<!-- 모달: 원생 관리 (퇴원/휴강/보강/수업변경) -->
+
+<div class="modal-bg" id="modal-stu-mgmt">
+  <div class="modal" style="max-height:88vh;overflow-y:auto;">
+    <h3 id="mgmt-title">원생 관리</h3>
+    <!-- 빠른 액션 버튼 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem;">
+      <button class="btn btn-sm" style="background:#ffebee;color:var(--red);border:1px solid #ef9a9a;padding:.55rem;" onclick="showMgmtForm('out')">🚪 퇴원 등록</button>
+      <button class="btn btn-sm" style="background:#fff8e1;color:#f57f17;border:1px solid #ffe082;padding:.55rem;" onclick="showMgmtForm('pause')">⏸ 휴강 등록</button>
+      <button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;padding:.55rem;" onclick="showMgmtForm('resume')">▶️ 복귀 등록</button>
+      <button class="btn btn-sm" style="background:#e3f2fd;color:var(--blue);border:1px solid #90caf9;padding:.55rem;" onclick="showMgmtForm('change')">🔄 수업일 변경</button>
+      <button class="btn btn-sm" style="background:#f3e5f5;color:#7b1fa2;border:1px solid #ce93d8;padding:.55rem;" onclick="showMgmtForm('makeup')">📚 보강 등록</button>
+      <button class="btn btn-sm" style="background:var(--pale);color:var(--muted);border:1px solid var(--border);padding:.55rem;" onclick="showMgmtForm('memo')">📝 메모 추가</button>
+    </div>
+
+```
+<!-- 폼 영역 -->
+<div id="mgmt-form" style="display:none;background:var(--pale);border-radius:10px;padding:.9rem;margin-bottom:1rem;">
+  <div style="font-size:.8rem;font-weight:700;margin-bottom:.7rem;" id="mgmt-form-title"></div>
+  <div class="fg" id="mgmt-date-wrap"><label id="mgmt-date-label">날짜</label><input type="date" id="mgmt-date" class="inp"></div>
+  <div class="fg" id="mgmt-date2-wrap" style="display:none;"><label>종료 날짜 (휴강 기간)</label><input type="date" id="mgmt-date2" class="inp"></div>
+  <div class="fg" id="mgmt-from-wrap" style="display:none;"><label>변경 전 수업일</label>
+    <select id="mgmt-from-day" class="inp">
+      <option value="">요일 선택</option>
+      <option value="월">월요일</option><option value="화">화요일</option><option value="수">수요일</option>
+      <option value="목">목요일</option><option value="금">금요일</option><option value="토">토요일</option>
+    </select>
+  </div>
+  <div class="fg" id="mgmt-to-wrap" style="display:none;"><label>변경 후 수업일</label>
+    <select id="mgmt-to-day" class="inp">
+      <option value="">요일 선택</option>
+      <option value="월">월요일</option><option value="화">화요일</option><option value="수">수요일</option>
+      <option value="목">목요일</option><option value="금">금요일</option><option value="토">토요일</option>
+    </select>
+  </div>
+  <div class="fg" id="mgmt-slot-wrap" style="display:none;"><label>보강 시간대</label>
+    <select id="mgmt-slot" class="inp">
+      <option value="">시간 선택</option>
+      <option value="1~2시">1~2시</option><option value="2~3시">2~3시</option>
+      <option value="3~4시">3~4시</option><option value="4~5시">4~5시</option><option value="5~6시">5~6시</option>
+    </select>
+  </div>
+  <div class="fg"><label id="mgmt-memo-label">사유 / 메모</label>
+    <textarea id="mgmt-memo" class="inp" rows="2" placeholder="사유를 입력하세요"></textarea>
+  </div>
+  <div style="display:flex;gap:.4rem;">
+    <button class="btn btn-o btn-sm" onclick="el('mgmt-form').style.display='none'">취소</button>
+    <button class="btn btn-p btn-sm" style="flex:1;" onclick="saveMgmt()">저장</button>
+  </div>
+</div>
+
+<!-- 이력 타임라인 -->
+<div style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">관리 이력</div>
+<div id="mgmt-timeline"></div>
+
+<div class="modal-footer">
+  <button class="btn btn-o btn-sm" onclick="closeM('modal-stu-mgmt')">닫기</button>
+</div>
+```
+
+  </div>
+</div>
+
 <!-- 모달: 원생 등록/수정 -->
 
 <div class="modal-bg" id="modal-stu">
@@ -534,6 +630,38 @@ header{background:var(–ink);color:#fff;height:52px;display:flex;align-items:ce
     <h3 id="stu-modal-title">원생 등록</h3>
     <input type="hidden" id="stu-edit-id">
     <div class="fg"><label>이름 *</label><input type="text" id="stu-name" class="inp" placeholder="홍길동"></div>
+    <div style="display:flex;gap:.5rem;">
+      <div class="fg" style="flex:1;"><label>성별</label>
+        <select id="stu-gender" class="inp">
+          <option value="">선택</option>
+          <option value="여">여</option>
+          <option value="남">남</option>
+        </select>
+      </div>
+      <div class="fg" style="flex:1;"><label>나이</label>
+        <input type="number" id="stu-age" class="inp" placeholder="8" min="1" max="99">
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;">
+      <div class="fg" style="flex:1;"><label>학년</label>
+        <select id="stu-grade" class="inp">
+          <option value="">선택</option>
+          <option value="미취학">미취학</option>
+          <option value="초1">초1</option><option value="초2">초2</option>
+          <option value="초3">초3</option><option value="초4">초4</option>
+          <option value="초5">초5</option><option value="초6">초6</option>
+          <option value="중1">중1</option><option value="중2">중2</option><option value="중3">중3</option>
+          <option value="고1">고1</option><option value="고2">고2</option><option value="고3">고3</option>
+          <option value="성인">성인</option>
+        </select>
+      </div>
+      <div class="fg" style="flex:1;"><label>학교</label>
+        <input type="text" id="stu-school" class="inp" placeholder="○○초등학교">
+      </div>
+    </div>
+    <div class="fg"><label>주소</label>
+      <input type="text" id="stu-addr" class="inp" placeholder="대구시 ○○구 ○○동">
+    </div>
     <div class="fg"><label>보호자 연락처</label><input type="tel" id="stu-phone" class="inp" placeholder="010-0000-0000"></div>
     <div class="fg"><label>수강 시간대 (복수 선택 가능)</label>
       <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem;" id="stu-slots-wrap">
@@ -544,7 +672,30 @@ header{background:var(–ink);color:#fff;height:52px;display:flex;align-items:ce
         <button class="perm-btn" data-slot="5~6시" onclick="tSlot(this)">5~6시</button>
       </div>
     </div>
-    <div class="fg"><label>월 수강료</label><input type="number" id="stu-fee" class="inp" placeholder="150000"></div>
+    <div class="fg"><label>수강 유형</label>
+      <select id="stu-type" class="inp" onchange="calcFee()">
+        <option value="">-- 선택 --</option>
+        <option value="1">주 1회 (월 110,000원)</option>
+        <option value="2">주 2회 (월 130,000원)</option>
+        <option value="3">주 3회 (월 150,000원)</option>
+        <option value="hobby">취미반 주 3회 (월 160,000원)</option>
+      </select>
+    </div>
+    <div class="fg"><label>형제 할인 (명수)</label>
+      <select id="stu-sibling" class="inp" onchange="calcFee()">
+        <option value="0">없음</option>
+        <option value="1">1명 (-5,000원)</option>
+        <option value="2">2명 (-10,000원)</option>
+        <option value="3">3명 (-15,000원)</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>월 수강료</label>
+      <div style="display:flex;align-items:center;gap:.5rem;">
+        <input type="number" id="stu-fee" class="inp" placeholder="자동 계산" style="flex:1;">
+        <span id="stu-fee-badge" style="font-size:.72rem;color:var(--sage);font-weight:700;white-space:nowrap;"></span>
+      </div>
+    </div>
     <div class="fg"><label>등록일</label><input type="date" id="stu-regdate" class="inp"></div>
     <div class="fg"><label>메모</label><textarea id="stu-memo" class="inp" rows="2" placeholder="특이사항"></textarea></div>
     <div class="modal-footer">
@@ -769,6 +920,8 @@ function openAddStu(){
   sv('stu-edit-id','');sv('stu-name','');sv('stu-phone','');sv('stu-fee',CFG.fee||'');
   sv('stu-regdate',today());sv('stu-memo','');
   selSlots=[];
+  sv('stu-type','');sv('stu-sibling','0');sv('stu-gender','');sv('stu-age','');sv('stu-grade','');sv('stu-school','');sv('stu-addr','');
+  if(el('stu-fee-badge'))el('stu-fee-badge').textContent='';
   document.querySelectorAll('#stu-slots-wrap .perm-btn').forEach(b=>b.classList.remove('on'));
   el('modal-stu').classList.add('show');
 }
@@ -778,6 +931,8 @@ function openEditStu(id){
   el('stu-modal-title').textContent='원생 수정';
   sv('stu-edit-id',id);sv('stu-name',s.name||'');sv('stu-phone',s.phone||'');
   sv('stu-fee',s.fee||'');sv('stu-regdate',s.regdate||today());sv('stu-memo',s.memo||'');
+  sv('stu-type',s.feeType||'');sv('stu-sibling',s.sibling||'0');sv('stu-gender',s.gender||'');sv('stu-age',s.age||'');sv('stu-grade',s.grade||'');sv('stu-school',s.school||'');sv('stu-addr',s.addr||'');
+  if(el('stu-fee-badge'))el('stu-fee-badge').textContent=s.feeType?getFeeLabel(s.feeType,s.sibling):'';
   selSlots=[...(s.slots||[])];
   document.querySelectorAll('#stu-slots-wrap .perm-btn').forEach(b=>{
     b.classList.toggle('on',selSlots.includes(b.dataset.slot));
@@ -794,7 +949,8 @@ function tSlot(btn){
 async function saveStu(){
   const name=gv('stu-name').trim();
   if(!name){toast('이름을 입력하세요');return;}
-  const data={name,phone:gv('stu-phone'),slots:selSlots,fee:gv('stu-fee'),regdate:gv('stu-regdate'),memo:gv('stu-memo'),updatedAt:new Date().toISOString()};
+  const feeType=gv('stu-type');const sibling=gv('stu-sibling');
+  const data={name,gender:gv('stu-gender'),age:gv('stu-age'),grade:gv('stu-grade'),school:gv('stu-school'),addr:gv('stu-addr'),phone:gv('stu-phone'),slots:selSlots,feeType,sibling,fee:gv('stu-fee'),regdate:gv('stu-regdate'),memo:gv('stu-memo'),updatedAt:new Date().toISOString()};
   showOv('저장 중…');
   try{
     const editId=gv('stu-edit-id');
@@ -826,9 +982,32 @@ async function deleteStu(id,name){
 
 function renderStudents(){
   const q=(gv('stu-q')||'').toLowerCase();
-  const list=STUS.filter(s=>!q||s.name?.toLowerCase().includes(q));
+  const all=STUS.filter(s=>!q||s.name?.toLowerCase().includes(q));
+
+  // 카운트 배지 업데이트
+  const cntAll=all.length;
+  const cntActive=all.filter(s=>!s.status||s.status==='active').length;
+  const cntPause=all.filter(s=>s.status==='pause').length;
+  const cntOut=all.filter(s=>s.status==='out').length;
+  const setCnt=(id,n)=>{const e=el(id);if(e)e.textContent=n?`(${n})`:'';};
+  setCnt('cnt-all',cntAll);setCnt('cnt-active',cntActive);
+  setCnt('cnt-pause',cntPause);setCnt('cnt-out',cntOut);
+
+  // 필터 적용
+  const list=all.filter(s=>{
+    if(stuFilter==='all') return true;
+    if(stuFilter==='active') return !s.status||s.status==='active';
+    return s.status===stuFilter;
+  });
+
   const wrap=el('stu-list-wrap');
-  if(!list.length){wrap.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.78rem;">등록된 원생이 없어요<br><br><button class="btn btn-b btn-sm" onclick="openAddStu()">+ 원생 등록</button></div>';return;}
+  if(!list.length){
+    const msg=stuFilter==='all'?'등록된 원생이 없어요':
+      stuFilter==='active'?'수강중인 원생이 없어요':
+      stuFilter==='pause'?'휴강중인 원생이 없어요':'퇴원한 원생이 없어요';
+    wrap.innerHTML=`<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.78rem;">${msg}${stuFilter==='all'?'<br><br><button class=\"btn btn-b btn-sm\" onclick=\"openAddStu()\">+ 원생 등록</button>':''}</div>`;
+    return;
+  }
   wrap.innerHTML=list.map(s=>{
     const recs=DB.filter(r=>r.studentName===s.name);
     const m=today().slice(0,7);const mR=recs.filter(r=>r.date?.startsWith(m));
@@ -836,13 +1015,17 @@ function renderStudents(){
     const rate=tot?Math.round(pr/tot*100):null;
     return `<div class="stu-card">
       <div class="stu-hd">
-        <div class="stu-av">${(s.name||'?')[0]}</div>
+        <div class="stu-av" style="${s.status==='out'?'background:var(--red);opacity:.6':s.status==='pause'?'background:var(--gold)':''}">${(s.name||'?')[0]}</div>
         <div class="stu-info">
-          <h4>${s.name||'이름없음'}</h4>
+          <h4>${s.name||'이름없음'} ${s.status==='out'?'<span class=\"status-badge status-out\">퇴원</span>':s.status==='pause'?'<span class=\"status-badge status-pause\">휴강중</span>':'<span class=\"status-badge status-active\">수강중</span>'}</h4>
+          <p>${[s.gender,s.grade,s.school].filter(Boolean).join(' · ')||'정보 없음'}</p>
           <p>${s.phone||'연락처 없음'} ${rate!==null?`· 이달 ${rate}%`:''}</p>
+          ${s.addr?`<p style="font-size:.67rem;color:var(--muted);">📍 ${s.addr}</p>`:''}
+          ${s.feeType?`<p style="font-size:.68rem;color:var(--blue);margin-top:.1rem;">${getFeeLabel(s.feeType,s.sibling)}</p>`:''}
         </div>
         <div class="stu-actions">
           <button class="btn btn-o btn-sm" onclick="openEditStu('${s.id}')">수정</button>
+          <button class="btn btn-gold btn-sm" onclick="openStuMgmt('${s.id}','${s.name}')">관리</button>
           <button class="btn btn-r btn-sm" onclick="deleteStu('${s.id}','${s.name}')">삭제</button>
         </div>
       </div>
@@ -918,8 +1101,9 @@ function stuTab(id,btn){
 function renderPay(){
   const yr=parseInt(gv('pay-year')||new Date().getFullYear());
   const wrap=el('pay-list');
-  if(!STUS.length){wrap.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.78rem;">등록된 원생이 없어요</div>';return;}
+  if(!STUS.length){wrap.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.78rem;">등록된 원생이 없어요<br><br><button class="btn btn-b btn-sm" onclick="stuTab(\'list\',document.querySelector(\'.tab\'))">+ 원생 등록</button></div>';return;}
   let unpaidCnt=0;
+  let totalExpected=0,totalPaid=0;
   wrap.innerHTML=STUS.map(s=>{
     const pays=JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}');
     const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -928,7 +1112,7 @@ function renderPay(){
     return `<div class="pay-card">
       <div class="pay-hd">
         <span class="pay-name">${s.name}</span>
-        <span class="pay-amount">월 ${Number(s.fee||CFG.fee||0).toLocaleString()}원</span>
+        <span class="pay-amount">${s.feeType?getFeeLabel(s.feeType,s.sibling):`월 ${Number(s.fee||0).toLocaleString()}원`}</span>
       </div>
       <div class="pay-months">
         ${months.map((m,i)=>{
@@ -1001,6 +1185,167 @@ async function deleteRec(){
     try{await db.collection('records').doc(rec.firestoreId).delete();}catch(e){}
   }
   toast('✅ 삭제 완료');closeM('modal-edit-rec');renderHist();renderHome();
+}
+
+
+// ════════════════════════════════════════════
+//  원생 관리 (퇴원/휴강/보강/수업변경)
+// ════════════════════════════════════════════
+let mgmtStuId='', mgmtStuName='', mgmtType='';
+let stuFilter='all'; // 원생 필터: all / active / pause / out
+
+function setStuFilter(filter, btn){
+  stuFilter=filter;
+  document.querySelectorAll('.stu-filter').forEach(b=>{
+    b.style.fontWeight='500';
+    b.style.opacity='.7';
+  });
+  btn.style.fontWeight='900';
+  btn.style.opacity='1';
+  renderStudents();
+}
+
+const MGMT_CONFIG = {
+  out:    {title:'🚪 퇴원 등록',    dateLabel:'퇴원일',     dot:'dot-out',    text:'퇴원'},
+  pause:  {title:'⏸ 휴강 등록',    dateLabel:'휴강 시작일', dot:'dot-pause',  text:'휴강'},
+  resume: {title:'▶️ 복귀 등록',   dateLabel:'복귀일',     dot:'dot-resume', text:'복귀'},
+  change: {title:'🔄 수업일 변경', dateLabel:'변경 적용일', dot:'dot-change', text:'수업일 변경'},
+  makeup: {title:'📚 보강 등록',   dateLabel:'보강 날짜',  dot:'dot-makeup', text:'보강'},
+  memo:   {title:'📝 메모 추가',   dateLabel:'날짜',        dot:'dot-resume', text:'메모'},
+};
+
+function openStuMgmt(id, name){
+  mgmtStuId=id; mgmtStuName=name;
+  el('mgmt-title').textContent=`${name} · 원생 관리`;
+  el('mgmt-form').style.display='none';
+  sv('mgmt-date', today());
+  sv('mgmt-date2',''); sv('mgmt-memo','');
+  renderTimeline();
+  el('modal-stu-mgmt').classList.add('show');
+}
+
+function showMgmtForm(type){
+  mgmtType=type;
+  const cfg=MGMT_CONFIG[type];
+  el('mgmt-form').style.display='block';
+  el('mgmt-form-title').textContent=cfg.title;
+  el('mgmt-date-label').textContent=cfg.dateLabel;
+  el('mgmt-memo-label').textContent=type==='memo'?'메모 내용':'사유 / 메모';
+  // 필드 show/hide
+  el('mgmt-date2-wrap').style.display=type==='pause'?'block':'none';
+  el('mgmt-from-wrap').style.display=type==='change'?'block':'none';
+  el('mgmt-to-wrap').style.display=type==='change'?'block':'none';
+  el('mgmt-slot-wrap').style.display=type==='makeup'?'block':'none';
+  sv('mgmt-date',today());
+}
+
+async function saveMgmt(){
+  const date=gv('mgmt-date');
+  if(!date){toast('날짜를 입력하세요');return;}
+  const cfg=MGMT_CONFIG[mgmtType];
+  let desc='';
+  if(mgmtType==='pause'){
+    const d2=gv('mgmt-date2');
+    desc=d2?`${date} ~ ${d2}`:`${date}~`;
+  } else if(mgmtType==='change'){
+    const from=gv('mgmt-from-day'),to=gv('mgmt-to-day');
+    desc=`${from}요일 → ${to}요일`;
+  } else if(mgmtType==='makeup'){
+    desc=`${date} ${gv('mgmt-slot')||''}`;
+  }
+  const memo=gv('mgmt-memo');
+  const entry={type:mgmtType,date,desc,memo,createdAt:new Date().toISOString()};
+
+  // localStorage에 이력 저장
+  const key=`mgmt_${mgmtStuId}`;
+  const history=JSON.parse(localStorage.getItem(key)||'[]');
+  history.unshift(entry);
+  localStorage.setItem(key,JSON.stringify(history));
+
+  // 원생 상태 업데이트
+  const stu=STUS.find(s=>s.id===mgmtStuId);
+  if(stu){
+    if(mgmtType==='out') stu.status='out';
+    else if(mgmtType==='pause') stu.status='pause';
+    else if(mgmtType==='resume') stu.status='active';
+    localStorage.setItem('sa_stus',JSON.stringify(STUS));
+    if(FB_READY&&db){
+      try{await db.collection('students').doc(mgmtStuId).update({status:stu.status});}catch(e){}
+    }
+  }
+
+  // Firestore에도 이력 저장
+  if(FB_READY&&db){
+    try{await db.collection('students').doc(mgmtStuId).collection('history').add(entry);}catch(e){}
+  }
+
+  toast(`✅ ${cfg.text} 등록 완료!`);
+  el('mgmt-form').style.display='none';
+  sv('mgmt-memo','');
+  renderTimeline();
+  renderStudents();
+}
+
+function renderTimeline(){
+  const key=`mgmt_${mgmtStuId}`;
+  const history=JSON.parse(localStorage.getItem(key)||'[]');
+  const wrap=el('mgmt-timeline');
+  if(!history.length){
+    wrap.innerHTML='<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.76rem;">관리 이력이 없어요</div>';
+    return;
+  }
+  wrap.innerHTML=history.map(h=>{
+    const cfg=MGMT_CONFIG[h.type]||{text:h.type,dot:'dot-resume'};
+    const detail=h.desc?`<br>${h.desc}`:'';
+    const memo=h.memo?`<br><span style="color:var(--muted);">${h.memo}</span>`:'';
+    return `<div class="timeline-item">
+      <div class="timeline-dot ${cfg.dot}"></div>
+      <div class="tl-content">
+        <div class="tl-title">${cfg.text}</div>
+        <div class="tl-desc">${detail}${memo}</div>
+        <div class="tl-date">${h.date} · ${h.createdAt?.slice(0,10)||''}</div>
+      </div>
+      <button class="btn btn-o btn-sm" style="padding:.15rem .4rem;font-size:.6rem;" onclick="deleteMgmt('${h.createdAt}')">삭제</button>
+    </div>`;
+  }).join('');
+}
+
+function deleteMgmt(createdAt){
+  if(!confirm('이 이력을 삭제할까요?'))return;
+  const key=`mgmt_${mgmtStuId}`;
+  const history=JSON.parse(localStorage.getItem(key)||'[]');
+  const newH=history.filter(h=>h.createdAt!==createdAt);
+  localStorage.setItem(key,JSON.stringify(newH));
+  toast('✅ 삭제 완료');renderTimeline();
+}
+
+// ════════════════════════════════════════════
+//  수강료 계산
+// ════════════════════════════════════════════
+const FEE_TABLE = {'1':110000,'2':130000,'3':150000,'hobby':160000};
+const FEE_LABELS = {'1':'주 1회','2':'주 2회','3':'주 3회','hobby':'취미반 주 3회'};
+
+function calcFee(){
+  const type=gv('stu-type');
+  const sibling=parseInt(gv('stu-sibling')||'0');
+  if(!type){sv('stu-fee','');el('stu-fee-badge').textContent='';return;}
+  const base=FEE_TABLE[type]||0;
+  const discount=sibling*5000;
+  const total=base-discount;
+  sv('stu-fee',total);
+  const badge=el('stu-fee-badge');
+  if(badge){
+    badge.textContent=discount>0?`기본 ${base.toLocaleString()} - 형제할인 ${discount.toLocaleString()}`:`${base.toLocaleString()}원`;
+  }
+}
+
+function getFeeLabel(type,sibling){
+  if(!type)return '';
+  const base=FEE_TABLE[type]||0;
+  const disc=(parseInt(sibling)||0)*5000;
+  const total=base-disc;
+  const lbl=FEE_LABELS[type]||'';
+  return `${lbl} · ${total.toLocaleString()}원${disc>0?' (형제할인 '+disc.toLocaleString()+')':''}`;
 }
 
 // ════════════════════════════════════════════
@@ -1098,7 +1443,10 @@ function renderHome(){
   const m=today().slice(0,7),mR=DB.filter(r=>r.date?.startsWith(m));
   const ab=DB.filter(r=>r.date===today()&&r.attendance==='absent').length;
   const pr=mR.filter(r=>r.attendance==='present').length,tot=mR.length;
-  el('st-total').textContent=STUS.length||'—';
+  const activeCount=STUS.filter(s=>!s.status||s.status==='active').length;
+  const pauseCount=STUS.filter(s=>s.status==='pause').length;
+  const outCount=STUS.filter(s=>s.status==='out').length;
+  el('st-total').textContent=activeCount||'—';
   el('st-ab').textContent=ab;
   el('st-rate').textContent=tot?Math.round(pr/tot*100)+'%':'—';
   // 미납 집계
@@ -1120,7 +1468,9 @@ function renderHome(){
     const stu=STUS.find(s=>s.name===nm);
     const paid=stu?JSON.parse(localStorage.getItem(`pay_${stu.id}_${yr2}`)||'{}')[cm2]:null;
     const payBdg=stu?(paid?'<span class="bdg b-pay">납부</span>':'<span class="bdg b-unpay">미납</span>'):'';
-    return `<tr><td><strong>${nm}</strong></td><td style="color:var(--sage)">${d.p}</td><td style="color:var(--accent)">${d.a}</td><td>${ac}</td><td>${payBdg}</td></tr>`;
+    const stuInfo=STUS.find(s=>s.name===nm);
+    const statusBdg=stuInfo?.status==='out'?'<span class="bdg br" style="font-size:.55rem;">퇴원</span>':stuInfo?.status==='pause'?'<span class="bdg bo" style="font-size:.55rem;">휴강</span>':'';
+    return `<tr><td><strong>${nm}</strong>${statusBdg}</td><td style="color:var(--sage)">${d.p}</td><td style="color:var(--accent)">${d.a}</td><td>${ac}</td><td>${payBdg}</td></tr>`;
   }).join(''):'<tr><td colspan="5" style="text-align:center;padding:1.2rem;color:var(--muted);font-size:.76rem;">이달 기록 없음</td></tr>';
 }
 
@@ -1232,7 +1582,7 @@ function buildCard(){
     </div><div class="rsec"><div class="rstl">평균 완성도</div>
       <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:.25rem;"><span>완성도</span><span>${avgC.toFixed(1)}/5</span></div>
       <div class="pbar"><div class="pbarf" style="width:${avgC/5*100}%"></div></div></div>
-    ${stu?`<div class="rsec"><div class="rstl">수강료</div><div style="display:flex;justify-content:space-between;font-size:.8rem;"><span>${Number(stu.fee||CFG.fee||0).toLocaleString()}원</span><span class="bdg ${paid?'b-pay':'b-unpay'}">${paid?'납부완료':'미납'}</span></div></div>`:''}
+    ${stu?`<div class="rsec"><div class="rstl">수강료</div><div style="display:flex;justify-content:space-between;font-size:.8rem;"><span>${stu.feeType?getFeeLabel(stu.feeType,stu.sibling):Number(stu.fee||0).toLocaleString()+'원'}</span><span class="bdg ${paid?'b-pay':'b-unpay'}">${paid?'납부완료':'미납'}</span></div></div>`:''}
     </div>
     <div class="rft"><span>${CFG.name||'솔브아트'} · ${CFG.phone||''}</span><span>${recs[0]?.teacher||'선생님'}</span></div></div>`;
 }
