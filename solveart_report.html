@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>솔브아트 리포트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1c1c2e; --accent:#c84b31; --gold:#e8a838; --sage:#5a8a63;
+  --pale:#f8f4ef; --border:#ddd5c5; --muted:#9a8f80; --white:#fff;
+  --blue:#2a5298; --green:#2d6a4f; --shadow:0 2px 16px rgba(0,0,0,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--pale);color:var(--ink);min-height:100vh;}
+
+/* ── HEADER ── */
+header{
+  background:var(--ink);color:#fff;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1rem;position:sticky;top:0;z-index:400;
+  box-shadow:0 2px 20px rgba(0,0,0,.35);
+}
+.logo{font-family:'Gowun Batang',serif;font-size:1.05rem;display:flex;align-items:center;gap:.35rem;}
+.logo em{color:var(--gold);font-style:normal;}
+.hdr-right{display:flex;align-items:center;gap:.5rem;}
+.hdr-btn{background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.75);
+  font-size:.72rem;padding:.25rem .6rem;border-radius:4px;cursor:pointer;font-family:inherit;}
+.hdr-btn:hover{background:rgba(255,255,255,.1);}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;
+  border-top:1px solid var(--border);display:flex;z-index:300;
+  box-shadow:0 -2px 16px rgba(0,0,0,.06);}
+.nitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:.55rem .2rem .45rem;cursor:pointer;color:var(--muted);font-size:.62rem;
+  font-weight:500;border:none;background:none;gap:.15rem;transition:all .2s;}
+.nitem .ic{font-size:1.25rem;line-height:1;}
+.nitem.on{color:var(--accent);}
+.nitem.on .ic{transform:scale(1.12);}
+
+/* ── PAGE ── */
+.page{display:none;padding:1rem 1rem 5.5rem;animation:fadeIn .25s ease;}
+.page.on{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARD ── */
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:1.1rem;margin-bottom:.9rem;box-shadow:var(--shadow);}
+.ctitle{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.8rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);}
+
+/* ── PAGE TITLE ── */
+.ptitle{font-family:'Gowun Batang',serif;font-size:1.25rem;font-weight:700;margin-bottom:.2rem;}
+.psub{font-size:.75rem;color:var(--muted);margin-bottom:1.1rem;font-weight:300;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin-bottom:.9rem;}
+.sbox{background:#fff;border:1px solid var(--border);border-radius:10px;
+  padding:.75rem .3rem;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.sbox::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.sbox.c1::after{background:var(--sage);}
+.sbox.c2::after{background:var(--accent);}
+.sbox.c3::after{background:var(--gold);}
+.sbox.c4::after{background:var(--blue);}
+.sval{font-size:1.55rem;font-weight:900;line-height:1;margin-bottom:.12rem;}
+.slbl{font-size:.6rem;color:var(--muted);}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:.78rem;}
+.tbl th{background:var(--ink);color:#fff;padding:.5rem .55rem;font-size:.68rem;font-weight:500;text-align:left;}
+.tbl th:first-child{border-radius:6px 0 0 0;}.tbl th:last-child{border-radius:0 6px 0 0;}
+.tbl td{padding:.55rem .55rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#fef9f6;}
+.bdg{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.65rem;font-weight:700;}
+.bg{background:#e8f5e9;color:#2e7d32;}.bo{background:#fff3e0;color:#e65100;}
+.br{background:#ffebee;color:#c62828;}.bb{background:#e3f2fd;color:#1565c0;}
+
+/* ── SCAN PAGE ── */
+.shero{background:var(--ink);border-radius:14px;padding:1.6rem 1.2rem;text-align:center;
+  color:#fff;margin-bottom:1rem;position:relative;overflow:hidden;}
+.shero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 75% 25%,rgba(232,168,56,.18),transparent 55%),
+             radial-gradient(ellipse at 25% 75%,rgba(200,75,49,.12),transparent 55%);}
+.shero>*{position:relative;}
+.shero h2{font-family:'Gowun Batang',serif;font-size:1.35rem;margin-bottom:.35rem;}
+.shero p{font-size:.76rem;color:rgba(255,255,255,.6);line-height:1.6;}
+
+.dzone{border:2.5px dashed var(--border);border-radius:14px;padding:1.8rem 1rem;
+  text-align:center;cursor:pointer;background:#fff;transition:all .25s;}
+.dzone:hover,.dzone.ov{border-color:var(--accent);background:#fff8f6;
+  transform:translateY(-2px);box-shadow:0 8px 28px rgba(200,75,49,.12);}
+.dzone .dzic{font-size:2.6rem;margin-bottom:.55rem;display:block;}
+.dzone h3{font-size:.9rem;font-weight:700;margin-bottom:.25rem;}
+.dzone p{font-size:.73rem;color:var(--muted);}
+.dzone input{display:none;}
+
+.cbtn{width:100%;padding:.85rem;background:var(--accent);color:#fff;border:none;
+  border-radius:10px;font-family:'Noto Sans KR',sans-serif;font-size:.9rem;font-weight:700;
+  cursor:pointer;margin-top:.7rem;display:flex;align-items:center;justify-content:center;
+  gap:.45rem;transition:all .2s;}
+.cbtn:hover{background:#a83928;transform:translateY(-1px);box-shadow:0 5px 18px rgba(200,75,49,.3);}
+
+/* ── OCR 결과 ── */
+.ocr-preview{background:#fff;border:1.5px solid var(--border);border-radius:10px;
+  overflow:hidden;margin-bottom:.8rem;}
+.ocr-hd{background:var(--pale);padding:.6rem .9rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+.ocr-hd h4{font-size:.85rem;font-weight:700;}
+.ocr-hd .slot{font-size:.68rem;color:var(--muted);background:var(--border);
+  padding:.15rem .5rem;border-radius:20px;}
+.ocr-bd{padding:.75rem .9rem;display:flex;flex-direction:column;gap:.45rem;}
+.orow{display:grid;grid-template-columns:60px 1fr;gap:.4rem;align-items:center;font-size:.78rem;}
+.olbl{color:var(--muted);font-size:.7rem;font-weight:500;}
+
+.inp{width:100%;border:1px solid var(--border);border-radius:6px;padding:.35rem .55rem;
+  font-family:'Noto Sans KR',sans-serif;font-size:.82rem;background:var(--pale);
+  outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--accent);background:#fff;}
+.inp-sm{width:80px;}
+
+.atog{display:flex;gap:.35rem;}
+.abtn{padding:.28rem .65rem;border:1.5px solid var(--border);border-radius:20px;
+  font-size:.7rem;cursor:pointer;background:#fff;font-family:inherit;transition:all .15s;}
+.abtn.p{background:var(--sage);border-color:var(--sage);color:#fff;}
+.abtn.a{background:var(--accent);border-color:var(--accent);color:#fff;}
+.abtn.l{background:var(--gold);border-color:var(--gold);color:#fff;}
+
+.cpills{display:flex;gap:.35rem;}
+.cpill{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);
+  background:#fff;font-size:.68rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+  font-family:inherit;color:var(--muted);}
+.cpill.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ── FORM ── */
+.fg{margin-bottom:.75rem;}
+.fg label{display:block;font-size:.74rem;font-weight:500;margin-bottom:.28rem;}
+.fg input,.fg select,.fg textarea{width:100%;padding:.48rem .65rem;
+  border:1px solid var(--border);border-radius:7px;
+  font-family:'Noto Sans KR',sans-serif;font-size:.83rem;
+  background:var(--pale);outline:none;transition:border-color .2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);background:#fff;}
+.fg textarea{resize:vertical;min-height:65px;}
+
+/* ── BUTTONS ── */
+.btn{padding:.62rem 1.3rem;border:none;border-radius:8px;
+  font-family:'Noto Sans KR',sans-serif;font-size:.86rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-p{background:var(--accent);color:#fff;}
+.btn-p:hover{background:#a83928;transform:translateY(-1px);}
+.btn-s{background:var(--ink);color:#fff;}
+.btn-g{background:var(--gold);color:var(--ink);}
+.btn-o{background:none;border:1.5px solid var(--border);color:var(--ink);}
+.btn-gr{background:var(--green);color:#fff;}
+.btn-sm{padding:.38rem .8rem;font-size:.76rem;}
+.brow{display:flex;gap:.55rem;margin-top:.9rem;}
+.brow.end{justify-content:flex-end;}
+
+.sstrip{position:sticky;bottom:4rem;background:#fff;border-top:1px solid var(--border);
+  padding:.65rem 1rem;display:flex;gap:.55rem;box-shadow:0 -4px 16px rgba(0,0,0,.07);}
+.sstrip .btn{flex:1;}
+
+/* ── OVERLAY ── */
+#ov{display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(26,26,46,.94);backdrop-filter:blur(6px);
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:.9rem;color:#fff;text-align:center;}
+#ov.show{display:flex;}
+.spin{width:64px;height:64px;border:3px solid rgba(232,168,56,.2);
+  border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ov-msg{font-size:.9rem;font-weight:700;}
+.ov-step{font-size:.78rem;color:rgba(255,255,255,.55);padding:.2rem 0;transition:color .3s;}
+.ov-step.act{color:#fff;font-weight:600;}
+.ov-step.dn{color:var(--gold);}
+
+/* ── 보고서 탭 ── */
+.rtabs{display:flex;background:#fff;border:1px solid var(--border);
+  border-radius:10px;padding:.28rem;gap:.28rem;margin-bottom:.9rem;}
+.rtab{flex:1;padding:.48rem .2rem;text-align:center;font-size:.76rem;font-weight:600;
+  cursor:pointer;border-radius:7px;color:var(--muted);border:none;
+  background:none;font-family:inherit;transition:all .2s;}
+.rtab.on{background:var(--accent);color:#fff;}
+
+/* ── 차트 ── */
+.chart{padding:.3rem 0;}
+.crow{display:flex;align-items:center;gap:.55rem;margin-bottom:.45rem;font-size:.73rem;}
+.clbl{width:52px;text-align:right;color:var(--muted);flex-shrink:0;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cbar-w{flex:1;background:var(--pale);border-radius:4px;height:13px;overflow:hidden;border:1px solid var(--border);}
+.cbar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--sage),var(--gold));transition:width .7s ease;}
+.cval{width:30px;font-weight:700;color:var(--ink);font-size:.7rem;flex-shrink:0;}
+
+/* ── 리포트 카드 ── */
+.rcard{background:#fff;border-radius:14px;overflow:hidden;
+  box-shadow:0 8px 36px rgba(0,0,0,.11);max-width:400px;margin:0 auto 1rem;}
+.rhd{background:var(--ink);padding:1.3rem 1.1rem;color:#fff;position:relative;overflow:hidden;}
+.rhd::after{content:'🎨';position:absolute;right:.7rem;top:.4rem;font-size:3rem;opacity:.09;}
+.r-ac{font-size:.6rem;letter-spacing:.12em;color:var(--gold);font-weight:700;
+  text-transform:uppercase;margin-bottom:.35rem;}
+.r-nm{font-family:'Gowun Batang',serif;font-size:1.55rem;font-weight:700;}
+.r-pd{font-size:.7rem;color:rgba(255,255,255,.5);margin-top:.18rem;}
+.rbody{padding:.9rem 1.1rem;}
+.rsec{margin-bottom:.9rem;}
+.rstl{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+  color:var(--muted);padding-bottom:.3rem;border-bottom:1px solid var(--border);margin-bottom:.55rem;}
+.attbs{display:flex;gap:.4rem;}
+.attb{flex:1;text-align:center;padding:.55rem .2rem;border-radius:8px;
+  background:var(--pale);border:1px solid var(--border);}
+.attb .n{font-size:1.5rem;font-weight:900;line-height:1;}
+.attb .l{font-size:.6rem;color:var(--muted);margin-top:.15rem;}
+.attb.pr .n{color:var(--sage);}.attb.ab .n{color:var(--accent);}
+.attb.rt .n{color:var(--gold);font-size:1.1rem;}
+.pbar{height:7px;background:var(--pale);border-radius:4px;border:1px solid var(--border);overflow:hidden;margin-top:.35rem;}
+.pbarf{height:100%;background:linear-gradient(90deg,var(--sage),var(--gold));border-radius:4px;}
+.cmt{background:var(--pale);border-left:3px solid var(--gold);
+  padding:.55rem .75rem;border-radius:0 6px 6px 0;font-size:.76rem;line-height:1.7;}
+.gol{background:var(--ink);color:#fff;padding:.55rem .75rem;border-radius:6px;font-size:.76rem;line-height:1.7;}
+.gol strong{color:var(--gold);}
+.rft{background:var(--pale);border-top:1px solid var(--border);
+  padding:.6rem 1.1rem;display:flex;justify-content:space-between;font-size:.63rem;color:var(--muted);}
+
+/* ── 기록 ── */
+.hitem{background:#fff;border:1px solid var(--border);border-radius:10px;
+  padding:.75rem .9rem;margin-bottom:.6rem;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+.hitem:hover{border-color:var(--accent);transform:translateY(-1px);}
+.hitem-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;}
+.hitem-hd strong{font-size:.85rem;}
+.hitem-row{display:flex;align-items:center;gap:.5rem;padding:.25rem 0;
+  border-bottom:1px dotted var(--border);font-size:.75rem;}
+.hitem-row:last-child{border-bottom:none;}
+
+/* ── 설정 ── */
+.setup-card{background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:1rem;margin-bottom:.8rem;box-shadow:var(--shadow);}
+.setup-num{width:24px;height:24px;background:var(--accent);color:#fff;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;}
+.setup-hd{display:flex;align-items:flex-start;gap:.65rem;margin-bottom:.55rem;}
+.setup-hd h4{font-size:.86rem;font-weight:700;padding-top:.2rem;}
+.setup-body{font-size:.76rem;color:var(--muted);line-height:1.75;padding-left:2rem;}
+.setup-body code{background:var(--pale);border:1px solid var(--border);
+  padding:.1rem .35rem;border-radius:4px;font-size:.73rem;color:var(--ink);}
+.urlbox{background:var(--ink);color:var(--gold);font-size:.72rem;padding:.45rem .75rem;
+  border-radius:6px;margin:.35rem 0;font-family:monospace;word-break:break-all;}
+.irow{display:flex;gap:.45rem;align-items:center;}
+.irow input{flex:1;padding:.45rem .65rem;border:1px solid var(--border);border-radius:7px;
+  font-family:monospace;font-size:.78rem;outline:none;}
+.apist{display:inline-flex;align-items:center;gap:.35rem;font-size:.73rem;
+  padding:.3rem .7rem;border-radius:20px;}
+.apist.ok{background:#e8f5e9;color:#2e7d32;}.apist.no{background:#ffebee;color:#c62828;}
+
+/* ── PROGRESS BOX (설치 진행) ── */
+.progress-steps{display:flex;flex-direction:column;gap:.5rem;}
+.pstep{display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;
+  border-radius:8px;border:1px solid var(--border);background:#fff;font-size:.78rem;}
+.pstep.done{border-color:var(--sage);background:#f0f9f1;}
+.pstep.doing{border-color:var(--gold);background:#fffbf0;}
+.pstep-ic{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+
+/* ── CODE BLOCK ── */
+.codeblock{background:#1e1e2e;border-radius:8px;padding:.85rem;overflow-x:auto;
+  position:relative;border:1px solid #313244;}
+.codeblock pre{font-family:'Courier New',monospace;font-size:.67rem;color:#cdd6f4;
+  line-height:1.65;white-space:pre-wrap;word-break:break-all;}
+.codeblock .c{color:#6c7086;}.codeblock .kw{color:#cba6f7;}
+.codeblock .st{color:#a6e3a1;}.codeblock .fn{color:#89b4fa;}
+.copy-btn{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);
+  font-size:.65rem;padding:.25rem .5rem;border-radius:4px;cursor:pointer;font-family:inherit;}
+.copy-btn:hover{background:rgba(255,255,255,.2);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:5.2rem;left:50%;
+  transform:translateX(-50%) translateY(16px);
+  background:var(--ink);color:#fff;padding:.55rem 1.1rem;
+  border-radius:8px;font-size:.78rem;opacity:0;transition:all .3s;
+  z-index:1000;white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.28);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎨 <em>솔브아트</em> 리포트</div>
+  <div class="hdr-right">
+    <span id="sync-badge" class="apist no" style="font-size:.65rem;">⬤ 미연동</span>
+    <button class="hdr-btn" onclick="nav('setup')">⚙️ 설정</button>
+  </div>
+</header>
+
+<!-- ══════════ 홈 ══════════ -->
+<div id="page-home" class="page on">
+  <div class="ptitle">대시보드</div>
+  <div class="psub" id="d-date">로딩 중...</div>
+
+  <div class="stats">
+    <div class="sbox c1"><div class="sval" id="st-total" style="color:var(--sage)">40</div><div class="slbl">전체 원생</div></div>
+    <div class="sbox c2"><div class="sval" id="st-ab" style="color:var(--accent)">0</div><div class="slbl">오늘 결석</div></div>
+    <div class="sbox c3"><div class="sval" id="st-rate" style="color:var(--gold)">—</div><div class="slbl">이달 출석률</div></div>
+    <div class="sbox c4"><div class="sval" id="st-rec" style="color:var(--blue)">0</div><div class="slbl">누적 기록</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">최근 스캔 기록</div>
+    <div id="d-recent"><div style="text-align:center;padding:1.8rem;color:var(--muted);font-size:.8rem;">📷 아직 스캔 기록이 없어요</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">이달 원생 현황</div>
+    <table class="tbl">
+      <thead><tr><th>이름</th><th>출석</th><th>결석</th><th>완성도</th><th>출석률</th></tr></thead>
+      <tbody id="d-tbody"><tr><td colspan="5" style="text-align:center;padding:1.2rem;color:var(--muted);font-size:.78rem;">기록 없음</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ 스캔 ══════════ -->
+<div id="page-scan" class="page">
+  <div class="shero">
+    <h2>📋 수업일지 스캔</h2>
+    <p>오늘 작성한 일일 양식을 사진으로 찍어 올리면<br>Google Vision AI가 자동으로 읽어드려요 (무료)</p>
+  </div>
+
+  <div class="dzone" id="dz"
+    onclick="document.getElementById('fi').click()"
+    ondragover="dzEv(event,'ov')" ondragleave="dzEv(event,'lv')" ondrop="dzEv(event,'dp')">
+    <span class="dzic">📄</span>
+    <h3>여기를 눌러 사진 선택</h3>
+    <p>JPG · PNG · 최대 10MB</p>
+    <input type="file" id="fi" accept="image/*" onchange="handleFile(event)">
+  </div>
+  <button class="cbtn" onclick="document.getElementById('ci').click()">
+    📷 카메라로 바로 찍기
+  </button>
+  <input type="file" id="ci" accept="image/*" capture="environment" style="display:none" onchange="handleFile(event)">
+
+  <div class="card" style="margin-top:.9rem;">
+    <div class="ctitle">⚡ 무료 동작 원리</div>
+    <div style="font-size:.76rem;line-height:2;color:var(--muted);">
+      1️⃣ 사진 업로드 → Google Drive 자동 저장<br>
+      2️⃣ Google Vision API가 글자 인식 (월 1,000회 무료)<br>
+      3️⃣ Apps Script가 원생별로 자동 분류<br>
+      4️⃣ Google Sheets에 자동 기록<br>
+      5️⃣ 보고서 버튼 한 번으로 자동 생성
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 결과 확인 ══════════ -->
+<div id="page-result" class="page" style="padding-bottom:7rem;">
+  <div style="background:linear-gradient(135deg,#1a3a2a,#2d6a4f);border-radius:12px;
+    padding:.9rem 1.1rem;color:#fff;display:flex;align-items:center;gap:.75rem;margin-bottom:.9rem;">
+    <div style="font-size:1.7rem;">✅</div>
+    <div><div style="font-size:.9rem;font-weight:700;">인식 완료!</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.7);margin-top:.15rem;">내용 확인 후 저장하세요</div></div>
+    <div style="margin-left:auto;background:rgba(255,255,255,.15);border-radius:8px;
+      padding:.4rem .65rem;text-align:center;">
+      <div style="font-size:1.1rem;font-weight:900;color:var(--gold);" id="conf-n">—</div>
+      <div style="font-size:.6rem;color:rgba(255,255,255,.6);">정확도</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:.8rem;">
+    <div class="ctitle">기본 정보</div>
+    <div class="fg"><label>날짜</label><input type="date" id="r-date" class="inp"></div>
+    <div class="fg"><label>담당 선생님</label><input type="text" id="r-teacher" class="inp" placeholder="선생님 이름"></div>
+    <div class="fg"><label>출결 메모</label><textarea id="r-att" class="inp" rows="2" placeholder="결석자 특이사항"></textarea></div>
+    <div class="fg"><label>원장 전달사항</label><textarea id="r-mgr" class="inp" rows="2"></textarea></div>
+    <div class="fg"><label>결제·수납</label><input type="text" id="r-pay" class="inp" placeholder="결제 메모"></div>
+  </div>
+
+  <div id="scards"></div>
+
+  <div class="sstrip">
+    <button class="btn btn-o btn-sm" onclick="nav('scan')">↩ 다시</button>
+    <button class="btn btn-p" onclick="saveAll()">💾 저장 (Sheets + 로컬)</button>
+  </div>
+</div>
+
+<!-- ══════════ 보고서 ══════════ -->
+<div id="page-report" class="page">
+  <div class="ptitle">보고서</div>
+  <div class="psub">주간 · 월간 · 연간 자동 생성 — 완전 무료</div>
+
+  <div class="rtabs">
+    <button class="rtab on" onclick="rTab('week',this)">주간</button>
+    <button class="rtab" onclick="rTab('month',this)">월간</button>
+    <button class="rtab" onclick="rTab('year',this)">연간</button>
+    <button class="rtab" onclick="rTab('stu',this)">원생별</button>
+  </div>
+
+  <!-- 주간 -->
+  <div id="rp-week">
+    <div class="stats" style="margin-bottom:.9rem;">
+      <div class="sbox c1"><div class="sval" id="w-days" style="color:var(--sage);font-size:1.3rem">0</div><div class="slbl">수업일</div></div>
+      <div class="sbox c2"><div class="sval" id="w-ab" style="color:var(--accent);font-size:1.3rem">0</div><div class="slbl">총결석</div></div>
+      <div class="sbox c3"><div class="sval" id="w-rt" style="color:var(--gold);font-size:1.3rem">—</div><div class="slbl">출석률</div></div>
+      <div class="sbox c4"><div class="sval" id="w-cp" style="color:var(--blue);font-size:1.3rem">—</div><div class="slbl">평균완성도</div></div>
+    </div>
+    <div class="card"><div class="ctitle">요일별 출석 현황</div><div class="chart" id="w-chart"></div></div>
+    <div class="card"><div class="ctitle">시간대별 원생 목록</div><div id="w-detail"></div></div>
+    <div class="brow end">
+      <button class="btn btn-o btn-sm" onclick="printRpt()">🖨️ 인쇄/PDF</button>
+      <button class="btn btn-p btn-sm" onclick="shareRpt()">📤 공유</button>
+    </div>
+  </div>
+
+  <!-- 월간 -->
+  <div id="rp-month" style="display:none;">
+    <div class="card">
+      <div class="ctitle">월 선택</div>
+      <input type="month" id="sel-month" class="inp" onchange="loadMonth()">
+    </div>
+    <div class="card"><div class="ctitle">원생별 출석률</div><div class="chart" id="m-chart"></div></div>
+    <div class="card"><div class="ctitle">학부모 리포트 카드</div>
+      <div class="fg"><label>원생 선택</label>
+        <select id="m-stu" class="inp" onchange="buildCard()"><option value="">-- 선택 --</option></select>
+      </div>
+      <div id="rcard-wrap"></div>
+      <div class="brow">
+        <button class="btn btn-o btn-sm" onclick="printRpt()">🖨️ 이미지/PDF로 저장</button>
+        <button class="btn btn-p btn-sm" onclick="shareRpt()">📤 카카오 공유</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 연간 -->
+  <div id="rp-year" style="display:none;">
+    <div class="card">
+      <div class="ctitle">연도</div>
+      <select id="sel-year" class="inp" onchange="loadYear()"></select>
+    </div>
+    <div class="card"><div class="ctitle">월별 출석률 추이</div><div class="chart" id="y-mchart"></div></div>
+    <div class="card"><div class="ctitle">원생별 완성작 수</div><div class="chart" id="y-schart"></div></div>
+    <div class="brow end"><button class="btn btn-p btn-sm" onclick="printRpt()">📄 연간보고서 인쇄</button></div>
+  </div>
+
+  <!-- 원생별 -->
+  <div id="rp-stu" style="display:none;">
+    <div class="card"><div class="ctitle">원생 선택</div>
+      <select id="sel-stu" class="inp" onchange="loadStuDetail()"><option value="">-- 선택 --</option></select>
+    </div>
+    <div id="stu-detail"></div>
+  </div>
+</div>
+
+<!-- ══════════ 기록 ══════════ -->
+<div id="page-hist" class="page">
+  <div class="ptitle">전체 기록</div>
+  <div class="psub">스캔된 수업일지 누적 데이터</div>
+  <div class="card" style="padding:.65rem .9rem;">
+    <input id="hist-q" type="text" class="inp" placeholder="🔍 날짜 또는 원생 이름 검색" oninput="renderHist()">
+  </div>
+  <div id="hist-list"></div>
+  <div id="hist-empty" style="text-align:center;padding:3rem;color:var(--muted);font-size:.8rem;display:none;">저장된 기록이 없어요</div>
+</div>
+
+<!-- ══════════ 설정 ══════════ -->
+<div id="page-setup" class="page">
+  <div class="ptitle">설정 & Google 연동</div>
+  <div class="psub">한 번만 설정하면 완전 무료로 영구 사용</div>
+
+  <!-- 상태 -->
+  <div class="card">
+    <div class="ctitle">연동 현황</div>
+    <div style="display:flex;flex-direction:column;gap:.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem;">
+        <span>📊 Google Sheets (데이터 저장)</span>
+        <span class="apist" id="sh-badge">⬤ 미설정</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem;">
+        <span>👁 Google Vision (OCR)</span>
+        <span class="apist" id="vc-badge">⬤ 자동설정</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 진행 단계 표시 -->
+  <div class="card">
+    <div class="ctitle">설치 진행 현황</div>
+    <div class="progress-steps">
+      <div class="pstep" id="ps1"><span class="pstep-ic">📁</span><span>Google Sheets 생성</span></div>
+      <div class="pstep" id="ps2"><span class="pstep-ic">⚙️</span><span>Apps Script 설치</span></div>
+      <div class="pstep" id="ps3"><span class="pstep-ic">🔑</span><span>Vision API 활성화</span></div>
+      <div class="pstep" id="ps4"><span class="pstep-ic">🔗</span><span>URL 입력 완료</span></div>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="setup-card">
+    <div class="setup-hd"><div class="setup-num">1</div><h4>Google Sheets 생성</h4></div>
+    <div class="setup-body">
+      아래 주소로 이동해서 새 스프레드시트를 만드세요<br>
+      <div class="urlbox">sheets.google.com</div>
+      새 스프레드시트 → 이름: <code>솔브아트DB</code>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="setup-card">
+    <div class="setup-hd"><div class="setup-num">2</div><h4>Apps Script 설치 (OCR + 저장 엔진)</h4></div>
+    <div class="setup-body">
+      Sheets 메뉴 → <code>확장 프로그램</code> → <code>Apps Script</code><br>
+      아래 코드를 전체 선택 후 붙여넣기 → 저장(💾)<br><br>
+      <strong style="color:var(--accent);">⭐ 이 코드 하나로 OCR + 저장 + 보고서 모두 해결!</strong>
+    </div>
+    <div class="codeblock" style="margin-top:.6rem;">
+      <button class="copy-btn" onclick="copyCode()">복사</button>
+      <pre id="script-code"><span class="c">// ══ 솔브아트 리포트 스크립트 v2.0 ══
+// Google Vision API + Sheets 저장 + 보고서 자동생성</span>
+
+<span class="c">// ① 웹앱 진입점 (POST)</span>
+<span class="kw">function</span> <span class="fn">doPost</span>(e) {
+  <span class="kw">const</span> data = JSON.<span class="fn">parse</span>(e.postData.contents);
+  <span class="kw">if</span> (data.action === <span class="st">'ocr'</span>)    <span class="kw">return</span> <span class="fn">ok</span>(<span class="fn">runOCR</span>(data.imageBase64));
+  <span class="kw">if</span> (data.action === <span class="st">'save'</span>)   <span class="kw">return</span> <span class="fn">ok</span>(<span class="fn">saveRecords</span>(data.records));
+  <span class="kw">if</span> (data.action === <span class="st">'report'</span>) <span class="kw">return</span> <span class="fn">ok</span>(<span class="fn">getReport</span>(data.type, data.params));
+  <span class="kw">return</span> <span class="fn">ok</span>({error:<span class="st">'unknown action'</span>});
+}
+<span class="kw">function</span> <span class="fn">doGet</span>() { <span class="kw">return</span> <span class="fn">ok</span>({status:<span class="st">'ok'</span>, version:<span class="st">'2.0'</span>}); }
+
+<span class="c">// ② Google Vision OCR (무료 월 1000회)</span>
+<span class="kw">function</span> <span class="fn">runOCR</span>(base64Image) {
+  <span class="kw">const</span> token  = ScriptApp.<span class="fn">getOAuthToken</span>();
+  <span class="kw">const</span> url    = <span class="st">'https://vision.googleapis.com/v1/images:annotate'</span>;
+  <span class="kw">const</span> body   = {
+    requests: [{
+      image: { content: base64Image },
+      features: [{ type: <span class="st">'DOCUMENT_TEXT_DETECTION'</span>, maxResults: 1 }]
+    }]
+  };
+  <span class="kw">const</span> res = UrlFetchApp.<span class="fn">fetch</span>(url, {
+    method: <span class="st">'POST'</span>,
+    contentType: <span class="st">'application/json'</span>,
+    headers: { Authorization: <span class="st">'Bearer '</span> + token },
+    payload: JSON.<span class="fn">stringify</span>(body)
+  });
+  <span class="kw">const</span> result = JSON.<span class="fn">parse</span>(res.<span class="fn">getContentText</span>());
+  <span class="kw">const</span> text = result.responses[0]?.fullTextAnnotation?.text || <span class="st">''</span>;
+  <span class="kw">return</span> { rawText: text, parsed: <span class="fn">parseJournal</span>(text) };
+}
+
+<span class="c">// ③ 텍스트 파싱 (일일 양식 → 원생별 데이터)</span>
+<span class="kw">function</span> <span class="fn">parseJournal</span>(text) {
+  <span class="kw">const</span> lines = text.<span class="fn">split</span>(<span class="st">'\n'</span>).<span class="fn">map</span>(l => l.<span class="fn">trim</span>()).<span class="fn">filter</span>(Boolean);
+  <span class="kw">const</span> students = [];
+  <span class="kw">let</span> curSlot = <span class="st">''</span>;
+  <span class="kw">const</span> dateMatch = text.<span class="fn">match</span>(/(\d+)월\s*(\d+)일/);
+  <span class="kw">const</span> date = dateMatch
+    ? <span class="st">`2025-${dateMatch[1].padStart(2,'0')}-${dateMatch[2].padStart(2,'0')}`</span>
+    : <span class="kw">new</span> Date().<span class="fn">toISOString</span>().<span class="fn">slice</span>(0,10);
+
+  lines.<span class="fn">forEach</span>(line => {
+    <span class="c">// 시간대 감지</span>
+    <span class="kw">const</span> slotM = line.<span class="fn">match</span>(/^(\d+)(?:~\d+)?시/);
+    <span class="kw">if</span> (slotM) { curSlot = slotM[0]; <span class="kw">return</span>; }
+
+    <span class="c">// 원생 행 감지 (v 또는 x 로 시작)</span>
+    <span class="kw">const</span> stuM = line.<span class="fn">match</span>(/^([vVxX✓✕△])\s*([가-힣]+)\s*[진:]?\s*(.+)?/u);
+    <span class="kw">if</span> (stuM) {
+      <span class="kw">const</span> att = <span class="st">'vV✓'</span>.<span class="fn">includes</span>(stuM[1]) ? <span class="st">'present'</span>
+                : <span class="st">'xX✕'</span>.<span class="fn">includes</span>(stuM[1]) ? <span class="st">'absent'</span> : <span class="st">'late'</span>;
+      <span class="kw">const</span> rest    = stuM[3] || <span class="st">''</span>;
+      <span class="kw">const</span> workM   = rest.<span class="fn">match</span>(/([가-힣a-zA-Z0-9.]+(?:\s[가-힣]+)?)\s*#?(\d+)?/u);
+      <span class="kw">const</span> compM   = rest.<span class="fn">match</span>(/[완덜단끝산]\b|[①②③④⑤]|\d(?=\s*$)/);
+      <span class="kw">const</span> timeM   = rest.<span class="fn">match</span>(/(\d{1,2}):(\d{2})/);
+      students.<span class="fn">push</span>({
+        timeSlot:   curSlot || <span class="st">'미상'</span>,
+        name:       stuM[2],
+        attendance: att,
+        workName:   workM?.[1]?.trim() || <span class="st">''</span>,
+        workNum:    workM?.[2] || <span class="st">'1'</span>,
+        completion: <span class="fn">mapComp</span>(compM?.[0] || <span class="st">''</span>),
+        startTime:  timeM ? timeM[0] : <span class="st">''</span>,
+        memo:       <span class="st">''</span>
+      });
+    }
+  });
+
+  <span class="c">// 메모 영역 파싱</span>
+  <span class="kw">const</span> attMemo = (text.<span class="fn">match</span>(/출결MEMO[]\s*([\s\S]*?)(?=\[|$)/) || [])[1] || <span class="st">''</span>;
+  <span class="kw">const</span> mgrMemo = (text.<span class="fn">match</span>(/원장[업무전달][\s\S]*?\]([\s\S]*?)(?=\[|$)/) || [])[1] || <span class="st">''</span>;
+  <span class="kw">return</span> { date, students, attMemo: attMemo.<span class="fn">trim</span>(), mgrMemo: mgrMemo.<span class="fn">trim</span>() };
+}
+
+<span class="kw">function</span> <span class="fn">mapComp</span>(s) {
+  <span class="kw">if</span> (!s) <span class="kw">return</span> 0;
+  <span class="kw">if</span> (<span class="st">'완끝'</span>.<span class="fn">includes</span>(s) || s===<span class="st">'⑤'</span>) <span class="kw">return</span> 5;
+  <span class="kw">if</span> (s===<span class="st">'덜'</span> || s===<span class="st">'④'</span>) <span class="kw">return</span> 4;
+  <span class="kw">if</span> (s===<span class="st">'단'</span>||s===<span class="st">'산'</span>||s===<span class="st">'③'</span>) <span class="kw">return</span> 3;
+  <span class="kw">if</span> (s===<span class="st">'②'</span>) <span class="kw">return</span> 2;
+  <span class="kw">if</span> (s===<span class="st">'①'</span>) <span class="kw">return</span> 1;
+  <span class="kw">return</span> parseInt(s) || 0;
+}
+
+<span class="c">// ④ Sheets 저장</span>
+<span class="kw">function</span> <span class="fn">saveRecords</span>(records) {
+  <span class="kw">const</span> ss    = SpreadsheetApp.<span class="fn">getActiveSpreadsheet</span>();
+  <span class="kw">const</span> sheet = <span class="fn">getOrMake</span>(ss, <span class="st">'수업기록'</span>);
+  <span class="kw">if</span> (sheet.<span class="fn">getLastRow</span>() === 0) {
+    sheet.<span class="fn">appendRow</span>([<span class="st">'저장시각'</span>,<span class="st">'수업날짜'</span>,<span class="st">'담당'</span>,<span class="st">'시간대'</span>,
+      <span class="st">'원생이름'</span>,<span class="st">'출결'</span>,<span class="st">'작품명'</span>,<span class="st">'회차'</span>,<span class="st">'완성도'</span>,
+      <span class="st">'메모'</span>,<span class="st">'출결메모'</span>,<span class="st">'원장메모'</span>,<span class="st">'결제메모'</span>]);
+    sheet.<span class="fn">getRange</span>(1,1,1,13).<span class="fn">setBackground</span>(<span class="st">'#1c1c2e'</span>)
+      .<span class="fn">setFontColor</span>(<span class="st">'#ffffff'</span>).<span class="fn">setFontWeight</span>(<span class="st">'bold'</span>);
+  }
+  records.<span class="fn">forEach</span>(r => sheet.<span class="fn">appendRow</span>([
+    <span class="kw">new</span> Date(), r.date, r.teacher, r.timeSlot,
+    r.studentName, r.attendance, r.workName, r.workNum,
+    r.completion, r.memo, r.attMemo, r.mgrMemo, r.payMemo
+  ]));
+  <span class="kw">return</span> { saved: records.length };
+}
+
+<span class="c">// ⑤ 보고서 데이터 조회</span>
+<span class="kw">function</span> <span class="fn">getReport</span>(type, params) {
+  <span class="kw">const</span> ss    = SpreadsheetApp.<span class="fn">getActiveSpreadsheet</span>();
+  <span class="kw">const</span> sheet = <span class="fn">getOrMake</span>(ss, <span class="st">'수업기록'</span>);
+  <span class="kw">const</span> rows  = sheet.<span class="fn">getDataRange</span>().<span class="fn">getValues</span>().<span class="fn">slice</span>(1);
+  <span class="kw">const</span> filter = rows.<span class="fn">filter</span>(r => {
+    <span class="kw">const</span> d = r[1] instanceof Date ? r[1].<span class="fn">toISOString</span>().<span class="fn">slice</span>(0,10) : String(r[1]);
+    <span class="kw">if</span> (type==='week')  <span class="kw">return</span> d >= params.from && d <= params.to;
+    <span class="kw">if</span> (type==='month') <span class="kw">return</span> d.<span class="fn">startsWith</span>(params.month);
+    <span class="kw">if</span> (type==='year')  <span class="kw">return</span> d.<span class="fn">startsWith</span>(params.year);
+    <span class="kw">return true</span>;
+  });
+  <span class="kw">return</span> { rows: filter };
+}
+
+<span class="kw">function</span> <span class="fn">getOrMake</span>(ss, name) {
+  <span class="kw">return</span> ss.<span class="fn">getSheetByName</span>(name) || ss.<span class="fn">insertSheet</span>(name);
+}
+<span class="kw">function</span> <span class="fn">ok</span>(data) {
+  <span class="kw">return</span> ContentService
+    .<span class="fn">createTextOutput</span>(JSON.<span class="fn">stringify</span>(data))
+    .<span class="fn">setMimeType</span>(ContentService.MimeType.JSON);
+}</pre>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="setup-card">
+    <div class="setup-hd"><div class="setup-num">3</div><h4>Vision API 활성화 (무료 · 1번만)</h4></div>
+    <div class="setup-body">
+      Apps Script 편집기에서:<br>
+      왼쪽 메뉴 <code>서비스(+)</code> → <code>Cloud Vision API</code> 검색 → <code>추가</code><br><br>
+      <span style="color:var(--accent);font-weight:600;">⭐ 추가 비용 없음!</span>
+      Google 계정에 포함된 무료 할당량 사용<br>
+      (월 1,000회 → 하루 30장 기준 약 33일치)
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="setup-card">
+    <div class="setup-hd"><div class="setup-num">4</div><h4>웹앱 배포 & URL 입력</h4></div>
+    <div class="setup-body">
+      Apps Script → <code>배포</code> → <code>새 배포</code><br>
+      유형: <code>웹앱</code> → 액세스: <code>나</code> → <code>배포</code><br>
+      ⬇️ 생성된 URL을 아래에 붙여넣기
+    </div>
+    <div style="margin-top:.7rem;padding-left:2rem;">
+      <div class="irow">
+        <input type="text" id="su-input" placeholder="https://script.google.com/macros/s/.../exec">
+        <button class="btn btn-s btn-sm" onclick="saveURL()">저장</button>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:.35rem;">
+        저장 후 테스트 버튼으로 연결 확인
+      </div>
+      <button class="btn btn-o btn-sm" style="margin-top:.5rem;width:100%;" onclick="testConn()">🔍 연결 테스트</button>
+    </div>
+  </div>
+
+  <!-- 학원 정보 -->
+  <div class="card">
+    <div class="ctitle">학원 정보</div>
+    <div class="fg"><label>학원명</label><input type="text" id="cfg-nm" class="inp" value="솔브아트"></div>
+    <div class="fg"><label>전화번호</label><input type="text" id="cfg-ph" class="inp" placeholder="053-000-0000"></div>
+    <div class="fg"><label>선생님 (쉼표 구분)</label><input type="text" id="cfg-tc" class="inp" placeholder="김지영, 박소희"></div>
+    <button class="btn btn-p" onclick="saveCfg()">설정 저장</button>
+  </div>
+
+  <!-- 데이터 관리 -->
+  <div class="card" style="margin-bottom:2rem;">
+    <div class="ctitle">데이터 관리</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <button class="btn btn-o btn-sm" onclick="exportJSON()">📥 JSON 내보내기</button>
+      <button class="btn btn-o btn-sm" onclick="syncSheets()">🔄 Sheets 동기화</button>
+      <button class="btn btn-o btn-sm" style="color:var(--accent);border-color:var(--accent);" onclick="clearAll()">🗑 전체 초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- 바텀 네비 -->
+<nav class="bnav">
+  <button class="nitem on" onclick="nav('home')"><span class="ic">🏠</span>홈</button>
+  <button class="nitem" onclick="nav('scan')"><span class="ic">📷</span>스캔</button>
+  <button class="nitem" onclick="nav('report')"><span class="ic">📊</span>보고서</button>
+  <button class="nitem" onclick="nav('hist')"><span class="ic">📁</span>기록</button>
+</nav>
+
+<!-- 오버레이 -->
+<div id="ov">
+  <div class="spin"></div>
+  <div class="ov-msg" id="ov-msg">처리 중…</div>
+  <div>
+    <div class="ov-step" id="os1">📷 이미지 준비</div>
+    <div class="ov-step" id="os2">👁 Vision OCR 인식</div>
+    <div class="ov-step" id="os3">👥 원생별 자동 분류</div>
+    <div class="ov-step" id="os4">✅ 완료</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════ STATE ════════
+let DB  = JSON.parse(localStorage.getItem('solveart_db') || '[]');
+let CFG = JSON.parse(localStorage.getItem('solveart_cfg') || '{}');
+let SHEETS_URL = localStorage.getItem('solveart_url') || '';
+let ocrData = null;
+let curImg  = null;
+
+// ════════ NAV ════════
+function nav(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nitem').forEach(n => n.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  const map={home:0,scan:1,report:2,hist:3};
+  if(map[id]!==undefined) document.querySelectorAll('.nitem')[map[id]].classList.add('on');
+  if(id==='home')   renderHome();
+  if(id==='report') initReport();
+  if(id==='hist')   renderHist();
+  if(id==='setup')  initSetup();
+}
+
+// ════════ SCAN ════════
+function dzEv(e, t) {
+  e.preventDefault();
+  const dz = document.getElementById('dz');
+  if(t==='ov') dz.classList.add('ov');
+  if(t==='lv') dz.classList.remove('ov');
+  if(t==='dp') { dz.classList.remove('ov'); processFile(e.dataTransfer.files[0]); }
+}
+function handleFile(e) { if(e.target.files[0]) processFile(e.target.files[0]); }
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => { curImg = ev.target.result; doScan(); };
+  reader.readAsDataURL(file);
+}
+
+async function doScan() {
+  showOv();
+  const steps = ['os1','os2','os3','os4'];
+  const msgs  = ['이미지 준비 중…', 'Vision AI 글자 인식 중…', '원생별로 분류 중…', '완료!'];
+  let si = 0;
+  const iv = setInterval(() => {
+    if(si>0) el(steps[si-1]).className='ov-step dn';
+    if(si < steps.length) { el(steps[si]).className='ov-step act'; el('ov-msg').textContent=msgs[si]; si++; }
+    else clearInterval(iv);
+  }, 800);
+
+  try {
+    const b64 = curImg.split(',')[1];
+
+    if(SHEETS_URL) {
+      // Google Vision 경로 (Apps Script)
+      const res = await fetch(SHEETS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action:'ocr', imageBase64: b64 }),
+        headers: { 'Content-Type':'application/json' }
+      });
+      const data = await res.json();
+      clearInterval(iv); steps.forEach(s => el(s).className='ov-step dn');
+      await delay(400); hideOv();
+      fillResult(data.parsed, data.rawText, 95);
+    } else {
+      // 오프라인 데모
+      clearInterval(iv); steps.forEach(s => el(s).className='ov-step dn');
+      await delay(400); hideOv();
+      fillResult(demoData(), '', 88);
+      toast('⚠️ Sheets URL 미설정 — 데모 데이터 표시 (설정 탭에서 연동하세요)');
+    }
+    nav('result');
+  } catch(err) {
+    clearInterval(iv); hideOv();
+    fillResult(demoData(), '', 80);
+    nav('result');
+    toast('⚠️ 연결 오류 — 데모 데이터 표시');
+  }
+}
+
+function demoData() {
+  return {
+    date: today(),
+    students: [
+      {timeSlot:'1~2시',name:'정이레',attendance:'present',workName:'3.1정',workNum:'3',completion:5,startTime:'13:40',memo:'90분 완료'},
+      {timeSlot:'1~2시',name:'안지안',attendance:'present',workName:'지정도자색',workNum:'2',completion:4,startTime:'13:40',memo:''},
+      {timeSlot:'1~2시',name:'신하영',attendance:'present',workName:'가족사진',workNum:'1',completion:3,startTime:'15:00',memo:''},
+      {timeSlot:'1~2시',name:'김태연',attendance:'present',workName:'가족사진',workNum:'1',completion:3,startTime:'14:45',memo:''},
+      {timeSlot:'3시',  name:'임혜원',attendance:'present',workName:'가족사진',workNum:'1',completion:3,startTime:'16:15',memo:''},
+      {timeSlot:'4시',  name:'박하야',attendance:'present',workName:'가족사진',workNum:'2',completion:5,startTime:'',memo:'완성'},
+      {timeSlot:'4시',  name:'김민을',attendance:'absent', workName:'',workNum:'',completion:0,startTime:'',memo:'결석'},
+      {timeSlot:'5시',  name:'홍지우',attendance:'absent', workName:'',workNum:'',completion:0,startTime:'',memo:'결석'},
+      {timeSlot:'5시',  name:'이윤서',attendance:'present',workName:'가족사진',workNum:'1',completion:3,startTime:'16:50',memo:''},
+    ],
+    attMemo: '이원석 결석', mgrMemo: '다음 주 발표 준비'
+  };
+}
+
+// ════════ RESULT ════════
+function fillResult(data, raw, conf) {
+  ocrData = data;
+  set('r-date',    data.date || today());
+  set('r-teacher', data.teacher || '');
+  set('r-att',     data.attMemo || '');
+  set('r-mgr',     data.mgrMemo || '');
+  set('r-pay',     data.payMemo || '');
+  el('conf-n').textContent = conf + '%';
+
+  const wrap = el('scards');
+  wrap.innerHTML = '';
+  (data.students||[]).forEach((s,i) => wrap.innerHTML += buildSCard(s,i));
+}
+
+function buildSCard(s, i) {
+  const atts = ['present','absent','late'];
+  const albl = ['○ 출석','✕ 결석','△ 지각'];
+  const acls = ['p','a','l'];
+  const attHTML = atts.map((a,ai) =>
+    `<button class="abtn ${s.attendance===a?acls[ai]:''}" onclick="setAtt(${i},'${a}')" id="ab-${i}-${a}">${albl[ai]}</button>`
+  ).join('');
+  const compHTML = [1,2,3,4,5].map(n =>
+    `<button class="cpill ${s.completion>=n?'on':''}" onclick="setComp(${i},${n})" id="cp-${i}-${n}">${n}</button>`
+  ).join('');
+
+  return `
+  <div class="ocr-preview">
+    <div class="ocr-hd">
+      <h4>${s.name||'이름없음'}</h4>
+      <span class="slot">${s.timeSlot||'시간대미상'}</span>
+    </div>
+    <div class="ocr-bd">
+      <div class="orow"><span class="olbl">출결</span><div class="atog">${attHTML}</div></div>
+      <div class="orow"><span class="olbl">작품명</span><input class="inp" value="${s.workName||''}" oninput="ocrData.students[${i}].workName=this.value" placeholder="작품명"></div>
+      <div class="orow"><span class="olbl">회차</span><input class="inp inp-sm" value="${s.workNum||''}" oninput="ocrData.students[${i}].workNum=this.value" placeholder="#"></div>
+      <div class="orow"><span class="olbl">완성도</span><div class="cpills">${compHTML}</div></div>
+      <div class="orow"><span class="olbl">메모</span><input class="inp" value="${s.memo||''}" oninput="ocrData.students[${i}].memo=this.value" placeholder="메모"></div>
+    </div>
+  </div>`;
+}
+
+function setAtt(i, val) {
+  ocrData.students[i].attendance = val;
+  const map={present:'p',absent:'a',late:'l'};
+  ['present','absent','late'].forEach(a => {
+    const b = el(`ab-${i}-${a}`);
+    if(b) b.className = 'abtn' + (a===val ? ' '+map[a] : '');
+  });
+}
+function setComp(i, val) {
+  ocrData.students[i].completion = val;
+  for(let n=1;n<=5;n++) {
+    const b = el(`cp-${i}-${n}`);
+    if(b) b.className = 'cpill' + (n<=val?' on':'');
+  }
+}
+
+// ════════ SAVE ════════
+async function saveAll() {
+  if(!ocrData) return;
+  const records = (ocrData.students||[]).map(s=>({
+    date:        get('r-date'),
+    teacher:     get('r-teacher'),
+    timeSlot:    s.timeSlot,
+    studentName: s.name,
+    attendance:  s.attendance,
+    workName:    s.workName,
+    workNum:     s.workNum,
+    completion:  s.completion,
+    memo:        s.memo,
+    attMemo:     get('r-att'),
+    mgrMemo:     get('r-mgr'),
+    payMemo:     get('r-pay'),
+    savedAt:     new Date().toISOString(),
+    thumb:       curImg
+  }));
+
+  // 로컬 저장 (항상)
+  DB = DB.concat(records);
+  localStorage.setItem('solveart_db', JSON.stringify(DB));
+
+  // Sheets 저장 (URL 있을 때)
+  if(SHEETS_URL) {
+    try {
+      await fetch(SHEETS_URL, {
+        method:'POST',
+        body: JSON.stringify({action:'save', records}),
+        headers:{'Content-Type':'application/json'}
+      });
+      toast(`✅ ${records.length}건 저장! (로컬 + Google Sheets)`);
+    } catch {
+      toast(`✅ ${records.length}건 로컬 저장 완료 (Sheets 연결 실패)`);
+    }
+  } else {
+    toast(`✅ ${records.length}건 로컬 저장 완료`);
+  }
+  nav('home');
+}
+
+// ════════ HOME ════════
+function renderHome() {
+  const now = new Date();
+  el('d-date').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 · 총 ${DB.length}건 누적`;
+
+  const m = now.toISOString().slice(0,7);
+  const mRec = DB.filter(r=>r.date?.startsWith(m));
+  const abToday = DB.filter(r=>r.date===today()&&r.attendance==='absent').length;
+  const pr = mRec.filter(r=>r.attendance==='present').length;
+  const tot = mRec.length;
+  const rate = tot ? Math.round(pr/tot*100)+'%' : '—';
+
+  el('st-ab').textContent  = abToday;
+  el('st-rate').textContent = rate;
+  el('st-rec').textContent  = DB.length;
+
+  // 최근 기록
+  const dates = [...new Set(DB.map(r=>r.date).filter(Boolean))].sort().reverse().slice(0,3);
+  el('d-recent').innerHTML = dates.length ? dates.map(d => {
+    const recs = DB.filter(r=>r.date===d);
+    const ab = recs.filter(r=>r.attendance==='absent').length;
+    return `<div class="hitem">
+      <div class="hitem-hd"><strong>📋 ${d}</strong><span class="bdg bb">${recs.length}건</span></div>
+      <div style="font-size:.75rem;color:var(--muted);">${recs.length}명 기록 · 결석 ${ab}명</div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;padding:1.8rem;color:var(--muted);font-size:.8rem;">📷 스캔 기록이 없어요</div>';
+
+  // 원생 현황
+  const smap = {};
+  mRec.forEach(r=>{
+    if(!r.studentName) return;
+    if(!smap[r.studentName]) smap[r.studentName]={p:0,a:0,c:[]};
+    if(r.attendance==='present') smap[r.studentName].p++;
+    else smap[r.studentName].a++;
+    if(r.completion) smap[r.studentName].c.push(r.completion);
+  });
+  const tbody = el('d-tbody');
+  const entries = Object.entries(smap);
+  if(!entries.length) {
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1.2rem;color:var(--muted);font-size:.78rem;">이달 기록 없음</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.slice(0,12).map(([nm,d])=>{
+    const t=d.p+d.a; const r=t?Math.round(d.p/t*100):0;
+    const ac=d.c.length?(d.c.reduce((a,b)=>a+b)/d.c.length).toFixed(1):'-';
+    const bc=r>=90?'bg':r>=70?'bo':'br';
+    return `<tr><td><strong>${nm}</strong></td><td style="color:var(--sage)">${d.p}</td><td style="color:var(--accent)">${d.a}</td><td>${ac}</td><td><span class="bdg ${bc}">${r}%</span></td></tr>`;
+  }).join('');
+}
+
+// ════════ REPORT ════════
+function rTab(id, btn) {
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  ['week','month','year','stu'].forEach(t=>el('rp-'+t).style.display='none');
+  el('rp-'+id).style.display='block';
+  if(id==='month') { el('sel-month').value=today().slice(0,7); loadMonth(); }
+  if(id==='year')  loadYear();
+  if(id==='stu')   loadStuList();
+}
+
+function initReport() {
+  // 주간
+  const now = new Date();
+  const dow = now.getDay();
+  const mon = new Date(now); mon.setDate(now.getDate()-(dow===0?6:dow-1));
+  const wRec = DB.filter(r=>r.date && new Date(r.date)>=mon && new Date(r.date)<=now);
+  const wD   = [...new Set(wRec.map(r=>r.date))].length;
+  const wA   = wRec.filter(r=>r.attendance==='absent').length;
+  const wP   = wRec.filter(r=>r.attendance==='present').length;
+  const wT   = wRec.length;
+  const wCs  = wRec.filter(r=>r.completion).map(r=>r.completion);
+  el('w-days').textContent = wD;
+  el('w-ab').textContent   = wA;
+  el('w-rt').textContent   = wT ? Math.round(wP/wT*100)+'%' : '—';
+  el('w-cp').textContent   = wCs.length ? (wCs.reduce((a,b)=>a+b)/wCs.length).toFixed(1) : '—';
+
+  // 요일 차트
+  const dmap={};
+  wRec.forEach(r=>{ if(!r.date) return; if(!dmap[r.date]) dmap[r.date]={p:0,a:0}; r.attendance==='present'?dmap[r.date].p++:dmap[r.date].a++; });
+  el('w-chart').innerHTML = Object.keys(dmap).length
+    ? Object.entries(dmap).sort().map(([d,v])=>{ const t=v.p+v.a; const r=t?Math.round(v.p/t*100):0;
+        return `<div class="crow"><span class="clbl">${d.slice(5).replace('-','/')}</span><div class="cbar-w"><div class="cbar" style="width:${r}%"></div></div><span class="cval">${r}%</span></div>`; }).join('')
+    : '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">이번 주 기록 없음</div>';
+
+  // 시간대별 목록
+  const slotMap={};
+  wRec.forEach(r=>{ const s=r.timeSlot||'미상'; if(!slotMap[s]) slotMap[s]=[]; slotMap[s].push(r); });
+  el('w-detail').innerHTML = Object.entries(slotMap).map(([slot,recs])=>`
+    <div style="margin-bottom:.7rem;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;">${slot}</div>
+      ${recs.map(r=>`<div style="display:flex;gap:.5rem;font-size:.75rem;padding:.2rem 0;border-bottom:1px dotted var(--border);">
+        <span>${r.attendance==='present'?'○':'✕'}</span>
+        <span style="font-weight:600;min-width:50px;">${r.studentName}</span>
+        <span style="color:var(--muted);">${r.workName||'-'} ${r.workNum?'#'+r.workNum:''}</span>
+        <span style="margin-left:auto;color:var(--accent);font-weight:700;">${r.completion?'★'.repeat(r.completion):''}</span>
+      </div>`).join('')}
+    </div>`).join('') || '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">기록 없음</div>';
+
+  // 연도 셀렉트
+  const yrs=[...new Set(DB.map(r=>r.date?.slice(0,4)).filter(Boolean))];
+  if(!yrs.includes(String(new Date().getFullYear()))) yrs.push(String(new Date().getFullYear()));
+  el('sel-year').innerHTML = yrs.sort().reverse().map(y=>`<option value="${y}">${y}년</option>`).join('');
+
+  updateStudentSelects();
+}
+
+function loadMonth() {
+  const m = el('sel-month').value || today().slice(0,7);
+  const recs = DB.filter(r=>r.date?.startsWith(m));
+  const smap={};
+  recs.forEach(r=>{ if(!r.studentName) return; if(!smap[r.studentName]) smap[r.studentName]={p:0,a:0}; r.attendance==='present'?smap[r.studentName].p++:smap[r.studentName].a++; });
+  el('m-chart').innerHTML = Object.entries(smap).length
+    ? Object.entries(smap).map(([nm,d])=>{ const t=d.p+d.a; const r=t?Math.round(d.p/t*100):0;
+        return `<div class="crow"><span class="clbl">${nm}</span><div class="cbar-w"><div class="cbar" style="width:${r}%"></div></div><span class="cval">${r}%</span></div>`; }).join('')
+    : '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">해당 월 데이터 없음</div>';
+  updateStudentSelects();
+}
+
+function loadYear() {
+  const yr = el('sel-year').value;
+  if(!yr) return;
+  const recs = DB.filter(r=>r.date?.startsWith(yr));
+
+  // 월별 출석률
+  const mmap={};
+  recs.forEach(r=>{ const m=r.date?.slice(0,7); if(!m) return; if(!mmap[m]) mmap[m]={p:0,a:0}; r.attendance==='present'?mmap[m].p++:mmap[m].a++; });
+  el('y-mchart').innerHTML = Object.entries(mmap).sort().map(([m,d])=>{ const t=d.p+d.a; const r=t?Math.round(d.p/t*100):0;
+    return `<div class="crow"><span class="clbl">${m.slice(5)}월</span><div class="cbar-w"><div class="cbar" style="width:${r}%"></div></div><span class="cval">${r}%</span></div>`; }).join('')
+    || '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">데이터 없음</div>';
+
+  // 원생별 완성작
+  const smap={};
+  recs.forEach(r=>{ if(!r.studentName) return; if(!smap[r.studentName]) smap[r.studentName]=0; if(r.completion>=5) smap[r.studentName]++; });
+  const mx=Math.max(...Object.values(smap),1);
+  el('y-schart').innerHTML = Object.entries(smap).sort((a,b)=>b[1]-a[1]).map(([nm,cnt])=>
+    `<div class="crow"><span class="clbl">${nm}</span><div class="cbar-w"><div class="cbar" style="width:${Math.round(cnt/mx*100)}%;background:linear-gradient(90deg,var(--accent),var(--gold))"></div></div><span class="cval">${cnt}작</span></div>`
+  ).join('') || '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">완성 기록 없음</div>';
+}
+
+function loadStuList() { updateStudentSelects(); }
+
+function updateStudentSelects() {
+  const stus = [...new Set(DB.map(r=>r.studentName).filter(Boolean))].sort();
+  ['m-stu','sel-stu'].forEach(id=>{ const e=el(id); if(!e) return;
+    const cur=e.value; e.innerHTML='<option value="">-- 선택 --</option>'+stus.map(s=>`<option value="${s}">${s}</option>`).join(''); if(cur) e.value=cur; });
+}
+
+function buildCard() {
+  const nm=el('m-stu').value; const m=el('sel-month').value||today().slice(0,7);
+  if(!nm) return;
+  const recs=DB.filter(r=>r.studentName===nm&&r.date?.startsWith(m));
+  const pr=recs.filter(r=>r.attendance==='present').length;
+  const ab=recs.filter(r=>r.attendance==='absent').length;
+  const tot=pr+ab; const rate=tot?Math.round(pr/tot*100):0;
+  const cs=recs.filter(r=>r.completion).map(r=>r.completion);
+  const avgC=cs.length?cs.reduce((a,b)=>a+b)/cs.length:0;
+  const lessons=recs.filter(r=>r.workName).map(r=>({d:r.date?.slice(5)||'',c:`${r.workName} #${r.workNum||1} · ★${r.completion||'?'}`}));
+
+  el('rcard-wrap').innerHTML=`
+  <div class="rcard">
+    <div class="rhd">
+      <div class="r-ac">${CFG.name||'솔브아트'} · Monthly Report</div>
+      <div class="r-nm">${nm}</div>
+      <div class="r-pd">${m.replace('-','년 ')}월 · 담당: ${recs[0]?.teacher||'선생님'}</div>
+    </div>
+    <div class="rbody">
+      <div class="rsec"><div class="rstl">출석 현황</div>
+        <div class="attbs">
+          <div class="attb pr"><div class="n">${pr}</div><div class="l">출석</div></div>
+          <div class="attb ab"><div class="n">${ab}</div><div class="l">결석</div></div>
+          <div class="attb rt"><div class="n">${rate}%</div><div class="l">출석률</div></div>
+        </div>
+      </div>
+      <div class="rsec"><div class="rstl">수업 내용</div>
+        ${lessons.slice(-5).map(l=>`<div style="font-size:.73rem;padding:.28rem 0;border-bottom:1px dotted var(--border);display:flex;gap:.4rem;"><span style="color:var(--muted);min-width:42px;font-size:.68rem;">${l.d}</span><span>${l.c}</span></div>`).join('')||'<div style="font-size:.75rem;color:var(--muted)">기록 없음</div>'}
+      </div>
+      <div class="rsec"><div class="rstl">평균 완성도</div>
+        <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:.28rem;"><span>완성도</span><span>${avgC.toFixed(1)} / 5</span></div>
+        <div class="pbar"><div class="pbarf" style="width:${avgC/5*100}%"></div></div>
+      </div>
+    </div>
+    <div class="rft"><span>${CFG.name||'솔브아트'} · ${CFG.phone||''}</span><span>${recs[0]?.teacher||'선생님'}</span></div>
+  </div>`;
+}
+
+function loadStuDetail() {
+  const nm=el('sel-stu').value; if(!nm){el('stu-detail').innerHTML='';return;}
+  const recs=DB.filter(r=>r.studentName===nm).sort((a,b)=>a.date>b.date?1:-1);
+  if(!recs.length){el('stu-detail').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);">기록 없음</div>';return;}
+  const bm={};
+  recs.forEach(r=>{ const m=r.date?.slice(0,7); if(!m) return; if(!bm[m]) bm[m]=[]; bm[m].push(r); });
+  el('stu-detail').innerHTML=`<div class="card"><div class="ctitle">${nm} · 전체 ${recs.length}건</div>
+    ${Object.entries(bm).sort().reverse().map(([m,mrs])=>{
+      const p=mrs.filter(r=>r.attendance==='present').length; const a=mrs.filter(r=>r.attendance==='absent').length;
+      const t=p+a; const rate=t?Math.round(p/t*100):0;
+      return `<div style="margin-bottom:.8rem;padding-bottom:.8rem;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
+          <strong style="font-size:.83rem;">${m.replace('-','년 ')}월</strong>
+          <span class="bdg ${rate>=90?'bg':rate>=70?'bo':'br'}">${rate}%</span>
+        </div>
+        <div class="crow" style="margin:0 0 .3rem;"><span class="clbl">출석률</span><div class="cbar-w"><div class="cbar" style="width:${rate}%"></div></div><span class="cval">${p}/${t}</span></div>
+        ${mrs.filter(r=>r.workName).map(r=>`<div style="font-size:.7rem;color:var(--muted);padding:.12rem 0;">${r.date?.slice(5)||''} · ${r.workName} #${r.workNum||1} · ★${r.completion||'?'}</div>`).join('')}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ════════ HISTORY ════════
+function renderHist() {
+  const q=(el('hist-q')?.value||'').toLowerCase();
+  const f=DB.filter(r=>!q||r.date?.includes(q)||r.studentName?.toLowerCase().includes(q)).sort((a,b)=>b.savedAt>a.savedAt?1:-1);
+  const list=el('hist-list'); const emp=el('hist-empty');
+  if(!f.length){list.innerHTML='';emp.style.display='block';return;}
+  emp.style.display='none';
+  const bd={};
+  f.forEach(r=>{ const d=r.date||'날짜없음'; if(!bd[d]) bd[d]=[]; bd[d].push(r); });
+  list.innerHTML=Object.entries(bd).sort((a,b)=>b[0]>a[0]?1:-1).map(([d,rs])=>{
+    const ab=rs.filter(r=>r.attendance==='absent').length;
+    return `<div class="card" style="padding:.75rem .9rem;margin-bottom:.65rem;">
+      <div class="hitem-hd"><strong>📋 ${d}</strong><div style="display:flex;gap:.35rem;"><span class="bdg bg">${rs.length}명</span>${ab?`<span class="bdg br">결석 ${ab}</span>`:''}</div></div>
+      ${rs.map(r=>`<div class="hitem-row">
+        <span style="width:16px;text-align:center;font-size:.8rem;">${r.attendance==='present'?'○':r.attendance==='absent'?'✕':'△'}</span>
+        <span style="font-weight:600;min-width:48px;font-size:.75rem;">${r.studentName||'?'}</span>
+        <span style="color:var(--muted);font-size:.72rem;">${r.timeSlot||''}</span>
+        <span style="color:var(--muted);flex:1;font-size:.72rem;">${r.workName?r.workName+' #'+(r.workNum||1):'-'}</span>
+        <span style="color:var(--accent);font-weight:700;font-size:.72rem;">${r.completion?'★'.repeat(r.completion):'-'}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ════════ SETUP ════════
+function initSetup() {
+  el('su-input').value = SHEETS_URL;
+  el('cfg-nm').value   = CFG.name||'솔브아트';
+  el('cfg-ph').value   = CFG.phone||'';
+  el('cfg-tc').value   = (CFG.teachers||[]).join(', ');
+  updateBadges();
+  updateProgressSteps();
+}
+
+function updateBadges() {
+  const sh = el('sh-badge');
+  if(sh){ sh.textContent=SHEETS_URL?'⬤ 연결됨':'⬤ 미설정'; sh.className='apist '+(SHEETS_URL?'ok':'no'); }
+  const vc = el('vc-badge');
+  if(vc){ vc.textContent=SHEETS_URL?'⬤ 연결됨':'⬤ Apps Script 필요'; vc.className='apist '+(SHEETS_URL?'ok':'no'); }
+  const sb = el('sync-badge');
+  if(sb){ sb.textContent=SHEETS_URL?'⬤ 연동됨':'⬤ 미연동'; sb.className='apist '+(SHEETS_URL?'ok':'no'); }
+}
+
+function updateProgressSteps() {
+  const done = ['done','done','done','done'];
+  if(!SHEETS_URL) { done[3]='doing'; done[2]=''; done[1]=''; }
+  ['ps1','ps2','ps3','ps4'].forEach((id,i)=>{
+    const e=el(id); if(!e) return;
+    e.className='pstep '+(done[i]||'');
+    const ic=e.querySelector('.pstep-ic');
+    if(ic) ic.textContent=done[i]==='done'?'✅':['📁','⚙️','🔑','🔗'][i];
+  });
+}
+
+function saveURL() {
+  SHEETS_URL = el('su-input').value.trim();
+  localStorage.setItem('solveart_url', SHEETS_URL);
+  updateBadges(); updateProgressSteps();
+  toast('✅ URL 저장 완료!');
+}
+
+async function testConn() {
+  if(!SHEETS_URL){ toast('⚠️ URL을 먼저 입력하세요'); return; }
+  try {
+    const res = await fetch(SHEETS_URL);
+    const d = await res.json();
+    if(d.status==='ok') toast('✅ 연결 성공! Apps Script 정상 작동 중');
+    else toast('⚠️ 응답 오류: '+JSON.stringify(d));
+  } catch { toast('❌ 연결 실패 — URL을 확인하세요'); }
+}
+
+function saveCfg() {
+  CFG = { name:el('cfg-nm').value, phone:el('cfg-ph').value, teachers:el('cfg-tc').value.split(',').map(t=>t.trim()).filter(Boolean) };
+  localStorage.setItem('solveart_cfg', JSON.stringify(CFG));
+  toast('✅ 설정 저장 완료');
+}
+
+function copyCode() {
+  const code = el('script-code').textContent;
+  navigator.clipboard?.writeText(code).then(()=>toast('📋 코드 복사 완료!')).catch(()=>toast('직접 선택해서 복사하세요'));
+}
+
+function exportJSON() {
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`solveart_${today()}.json`; a.click();
+}
+
+async function syncSheets() {
+  if(!SHEETS_URL){ toast('⚠️ Sheets URL 미설정'); return; }
+  try {
+    const res=await fetch(SHEETS_URL,{method:'POST',body:JSON.stringify({action:'report',type:'all',params:{}}),headers:{'Content-Type':'application/json'}});
+    const d=await res.json();
+    toast(`✅ ${d.rows?.length||0}건 동기화`);
+  } catch { toast('연결 실패'); }
+}
+
+function clearAll() {
+  if(!confirm('⚠️ 모든 로컬 데이터를 삭제할까요?')) return;
+  DB=[]; localStorage.removeItem('solveart_db'); toast('🗑 초기화 완료'); renderHome();
+}
+
+// ════════ UTILS ════════
+function el(id)  { return document.getElementById(id); }
+function set(id,v){ const e=el(id); if(e) e.value=v||''; }
+function get(id) { return el(id)?.value||''; }
+function today() { return new Date().toISOString().slice(0,10); }
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function showOv(){ el('ov').classList.add('show'); ['os1','os2','os3','os4'].forEach(s=>el(s).className='ov-step'); }
+function hideOv(){ el('ov').classList.remove('show'); }
+function toast(msg){ const t=el('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3200); }
+function printRpt(){ window.print(); }
+function shareRpt(){ if(navigator.share) navigator.share({title:'솔브아트 리포트'}); else toast('화면 캡처 후 카카오톡으로 공유하세요'); }
+
+// ════════ INIT ════════
+renderHome();
+el('sel-month').value = today().slice(0,7);
+</script>
+</body>
+</html>
