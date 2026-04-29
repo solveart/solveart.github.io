@@ -495,12 +495,12 @@ header{background:var(--ink);color:#fff;height:52px;display:flex;align-items:cen
 //  🔥 FIREBASE 설정 — 아래 값을 본인 Firebase 설정으로 교체하세요
 // ════════════════════════════════════════════
 const FB_CFG = {
-  apiKey:            "AIzaSyAXdWV656FNkkf-ex9Gk3cAugIq82lh9mo",
-  authDomain:        "solve-99f06.firebaseapp.com",
-  projectId:         "solve-99f06",
-  storageBucket:     "solve-99f06.firebasestorage.app",
-  messagingSenderId: "757315756544",
-  appId:             "1:757315756544:web:fe614f31b75712c58eaee5"
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
 };
 // ════════════════════════════════════════════
 
@@ -733,7 +733,7 @@ async function sendResetEmail(){
 }
 
 function openEditPerm(uid,name,perms){
-  editUid=uid; newPerms={...({input:true,view:true,report:false},...(perms||{}))};
+  editUid=uid; const base={input:true,view:true,report:false}; const p2=perms||{}; newPerms=Object.assign({},base,p2);
   el('perm-title').textContent=`${name} 권한 편집`;
   ['input','view','report'].forEach(p=>{const b=el('ep-'+p);if(b)b.className='perm-btn'+(newPerms[p]?' on':'');});
   el('modal-perm').classList.add('show');
