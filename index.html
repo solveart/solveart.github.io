@@ -51,7 +51,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .logout-btn:hover{background:rgba(255,255,255,.1);}
 
 /* ══ PC 사이드바 레이아웃 ══ */
-.app-body{display:flex;flex:1;}
+.app-body{display:flex;flex:1;justify-content:center;}
 #sidebar{display:none;width:var(--sidebar-w);background:var(--ink);flex-shrink:0;position:sticky;top:var(--header-h);height:calc(100vh - var(--header-h));overflow-y:auto;flex-direction:column;}
 #sidebar .sn-item{display:flex;align-items:center;gap:.7rem;padding:.85rem 1.2rem;font-size:.85rem;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;border-left:3px solid transparent;transition:all .2s;}
 #sidebar .sn-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05);}
@@ -59,7 +59,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;min-width:0;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;max-width:680px;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -71,7 +71,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;max-width:680px;margin:0 auto;width:100%;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -359,12 +359,15 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .dash-stats{grid-template-columns:repeat(4,1fr);}
   .dash-mid{flex-direction:row;}
   .dsc-val{font-size:2rem;}
-  .page{padding:1.2rem 1.5rem 5rem;max-width:720px;}
+  .content-area{max-width:720px;}
+  .page{padding:1.2rem 1.5rem 5rem;}
 }
 @media(min-width:1024px){
   #sidebar{display:flex;}
   .bnav{display:none !important;}
-  .page{padding:1.5rem 2rem;max-width:900px;}
+  .app-body{justify-content:flex-start;}
+  .content-area{max-width:calc(100vw - var(--sidebar-w));}
+  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
@@ -374,6 +377,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .stats{grid-template-columns:repeat(2,1fr);}
   .stu-actions{flex-direction:column;gap:.25rem;}
   .stu-actions .btn{font-size:.65rem;padding:.28rem .5rem;}
+  .content-area{max-width:100%;}
   .page{padding:.8rem .8rem 5rem;}
 }
 </style>
@@ -2881,7 +2885,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .logout-btn:hover{background:rgba(255,255,255,.1);}
 
 /* ══ PC 사이드바 레이아웃 ══ */
-.app-body{display:flex;flex:1;}
+.app-body{display:flex;flex:1;justify-content:center;}
 #sidebar{display:none;width:var(--sidebar-w);background:var(--ink);flex-shrink:0;position:sticky;top:var(--header-h);height:calc(100vh - var(--header-h));overflow-y:auto;flex-direction:column;}
 #sidebar .sn-item{display:flex;align-items:center;gap:.7rem;padding:.85rem 1.2rem;font-size:.85rem;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;border-left:3px solid transparent;transition:all .2s;}
 #sidebar .sn-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05);}
@@ -2889,7 +2893,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;min-width:0;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;max-width:680px;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -2901,7 +2905,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;max-width:680px;margin:0 auto;width:100%;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -3189,12 +3193,15 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .dash-stats{grid-template-columns:repeat(4,1fr);}
   .dash-mid{flex-direction:row;}
   .dsc-val{font-size:2rem;}
-  .page{padding:1.2rem 1.5rem 5rem;max-width:720px;}
+  .content-area{max-width:720px;}
+  .page{padding:1.2rem 1.5rem 5rem;}
 }
 @media(min-width:1024px){
   #sidebar{display:flex;}
   .bnav{display:none !important;}
-  .page{padding:1.5rem 2rem;max-width:900px;}
+  .app-body{justify-content:flex-start;}
+  .content-area{max-width:calc(100vw - var(--sidebar-w));}
+  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
@@ -3204,6 +3211,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .stats{grid-template-columns:repeat(2,1fr);}
   .stu-actions{flex-direction:column;gap:.25rem;}
   .stu-actions .btn{font-size:.65rem;padding:.28rem .5rem;}
+  .content-area{max-width:100%;}
   .page{padding:.8rem .8rem 5rem;}
 }
 
