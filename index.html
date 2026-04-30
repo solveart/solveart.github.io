@@ -59,7 +59,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;min-width:0;max-width:680px;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;display:flex;flex-direction:column;align-items:center;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -71,7 +71,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -359,15 +359,14 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .dash-stats{grid-template-columns:repeat(4,1fr);}
   .dash-mid{flex-direction:row;}
   .dsc-val{font-size:2rem;}
-  .content-area{max-width:720px;}
-  .page{padding:1.2rem 1.5rem 5rem;}
+  .page{padding:1.2rem 1.5rem 5rem;max-width:720px;}
 }
 @media(min-width:1024px){
   #sidebar{display:flex;}
   .bnav{display:none !important;}
   .app-body{justify-content:flex-start;}
-  .content-area{max-width:calc(100vw - var(--sidebar-w));}
-  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;}
+  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;}
+  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;width:100%;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
@@ -676,10 +675,11 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 <!-- 관리자 -->
 <div id="page-admin" class="page">
   <div class="ptitle">관리자 패널</div><div class="psub">선생님 계정 · 권한 · 수업 현황</div>
-  <div class="tabs">
+  <div class="tabs" style="font-size:.68rem;">
     <button class="tab on" onclick="aTab('teachers',this)">👩‍🏫 선생님</button>
     <button class="tab" onclick="aTab('monitor',this)">📡 현황</button>
     <button class="tab" onclick="aTab('salary',this)">💵 급여</button>
+    <button class="tab" onclick="aTab('ledger',this)">📒 급여대장</button>
     <button class="tab" onclick="aTab('config',this)">⚙️ 설정</button>
   </div>
   <div id="at-teachers">
@@ -859,10 +859,78 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
     </div>
   </div>
 
+  <!-- 급여대장 탭 -->
+  <div id="at-ledger" style="display:none;">
+    <div class="card">
+      <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>📒 전체 급여대장</span>
+        <div style="display:flex;gap:.4rem;">
+          <select id="ledger-year" class="inp" style="width:80px;" onchange="renderLedger()"></select>
+          <select id="ledger-month" class="inp" style="width:70px;" onchange="renderLedger()">
+            <option value="0">전체</option>
+            <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+            <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+            <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+            <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 급여지급일 설정 -->
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;padding:.6rem .8rem;background:var(--gold-pale);border-radius:8px;border:1px solid var(--border);">
+        <span style="font-size:.75rem;font-weight:700;color:var(--muted);">급여지급일</span>
+        <input type="number" id="pay-day" class="inp" style="width:60px;" min="1" max="31" placeholder="25">
+        <span style="font-size:.72rem;color:var(--muted);">일</span>
+        <button class="btn btn-gold btn-sm" onclick="savePayDay()">저장</button>
+        <span id="next-payday" style="font-size:.72rem;color:var(--blue);font-weight:700;margin-left:.3rem;"></span>
+      </div>
+
+      <!-- 급여대장 테이블 -->
+      <div style="overflow-x:auto;">
+        <table class="tbl" id="ledger-table">
+          <thead>
+            <tr>
+              <th>선생님</th>
+              <th>지급월</th>
+              <th>기본급</th>
+              <th>수당</th>
+              <th>공제</th>
+              <th>실수령액</th>
+              <th>상태</th>
+              <th>발송</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);">급여 기록을 저장하면 여기에 표시돼요</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 합계 -->
+      <div id="ledger-total" style="margin-top:.7rem;padding:.7rem;background:var(--ink);border-radius:8px;color:#fff;font-size:.8rem;display:none;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:rgba(255,255,255,.7);">총 지급액 합계</span>
+          <span id="ledger-total-amt" style="font-weight:900;color:var(--gold);"></span>
+        </div>
+      </div>
+
+      <!-- 일괄 발송 -->
+      <div style="margin-top:.8rem;display:flex;gap:.5rem;">
+        <button class="btn btn-b btn-sm" style="flex:1;" onclick="sendAllPayslips('email')">📧 전체 이메일 발송</button>
+        <button class="btn btn-gold btn-sm" style="flex:1;" onclick="sendAllPayslips('kakao')">💬 카카오톡 공유</button>
+        <button class="btn btn-o btn-sm" onclick="window.print()">🖨️ 인쇄</button>
+      </div>
+    </div>
+  </div>
+
   <div id="at-config" style="display:none;">
     <div class="card"><div class="ctitle">학원 정보</div>
       <div class="fg"><label>학원명</label><input type="text" id="cfg-nm" class="inp"></div>
       <div class="fg"><label>전화번호</label><input type="text" id="cfg-ph" class="inp" placeholder="053-000-0000"></div>
+      <div class="fg"><label>📧 급여명세서 발송 이메일</label><input type="email" id="cfg-sender-email" class="inp" placeholder="원장님 이메일 (발신자)"></div>
+      <div class="fg"><label>이메일 앱 비밀번호</label><input type="password" id="cfg-email-pw" class="inp" placeholder="Gmail 앱 비밀번호 (16자리)">
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.2rem;">Gmail 사용 시: Google 계정 → 보안 → 앱 비밀번호 생성</div>
+      </div>
       <div style="margin-bottom:.8rem;">
         <div style="font-size:.75rem;font-weight:800;color:var(--ink);margin-bottom:.6rem;">💰 수강료 기준표 (직접 수정 가능)</div>
         <div style="display:grid;gap:.5rem;">
@@ -2349,14 +2417,7 @@ async function sendResetEmail(){
   else toast('✅ 재설정 메일 발송 (데모)');closeM('modal-reset');}
   catch(e){toast('오류: '+e.message);}hideOv();
 }
-// 구버전 권한 함수 제거됨 (신버전 openEditPerm 사용)
-async function savePerms(){
-  showOv('권한 저장 중…');
-  try{if(FB_READY&&db)await db.collection('users').doc(editUid).update({perms:newPerms});
-    else{const u=JSON.parse(localStorage.getItem('sa_demo_users')||'[]');const t=u.find(x=>x.uid===editUid);if(t)t.perms={...newPerms};localStorage.setItem('sa_demo_users',JSON.stringify(u));}
-    toast('✅ 권한 저장');closeM('modal-perm');loadTeachers();}
-  catch(e){toast('오류: '+e.message);}hideOv();
-}
+// // 구버전 권한 함수 완전 제거됨
 async function delTeacher(uid,name){
   if(!confirm(`⚠️ "${name}" 계정을 삭제할까요?`))return;showOv('삭제 중…');
   try{if(FB_READY&&db)await db.collection('users').doc(uid).delete();
@@ -2386,14 +2447,16 @@ function loadMonitor(){
 }
 function aTab(id,btn){
   document.querySelectorAll('#page-admin .tab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');
-  ['teachers','monitor','salary','config'].forEach(t=>el('at-'+t).style.display='none');el('at-'+id).style.display='block';
+  ['teachers','monitor','salary','ledger','config'].forEach(t=>{if(el('at-'+t))el('at-'+t).style.display='none';});el('at-'+id).style.display='block';
   if(id==='teachers')loadTeachers();
   if(id==='monitor'){sv('mon-date',today());loadMonitor();}
   if(id==='salary'){loadSalaryTeachers();}
+  if(id==='ledger'){initLedger();}
   if(id==='config'){
     el('su-input').value=SU;
     el('cfg-nm').value=CFG.name||'솔브아트';
     el('cfg-ph').value=CFG.phone||'';
+    if(el('cfg-sender-email'))el('cfg-sender-email').value=CFG.senderEmail||'';
     if(el('fee-w1'))el('fee-w1').value=CFG.feeW1||110000;
     if(el('fee-w2'))el('fee-w2').value=CFG.feeW2||130000;
     if(el('fee-w3'))el('fee-w3').value=CFG.feeW3||150000;
@@ -2439,6 +2502,7 @@ async function changePw(){
 function saveCfg(){
   CFG={
     name:gv('cfg-nm'),phone:gv('cfg-ph'),
+    senderEmail:gv('cfg-sender-email'),
     feeW1:parseInt(el('fee-w1')?.value||110000),
     feeW2:parseInt(el('fee-w2')?.value||130000),
     feeW3:parseInt(el('fee-w3')?.value||150000),
@@ -2758,6 +2822,252 @@ function openStatDetail(type){
 }
 
 
+
+
+// ════════════════════════════════════════════
+//  급여대장 & 명세서 발송
+// ════════════════════════════════════════════
+
+function initLedger(){
+  // 연도 셀렉트 초기화
+  const yrSel=el('ledger-year');
+  if(yrSel&&!yrSel.options.length){
+    const now=new Date().getFullYear();
+    for(let y=now-2;y<=now+1;y++)
+      yrSel.innerHTML+=`<option value="${y}" ${y===now?'selected':''}>${y}년</option>`;
+  }
+  // 급여지급일 로드
+  const payDay=CFG.payDay||25;
+  if(el('pay-day'))el('pay-day').value=payDay;
+  updateNextPayday();
+  // 현재 월 선택
+  if(el('ledger-month'))el('ledger-month').value=new Date().getMonth()+1;
+  renderLedger();
+}
+
+function savePayDay(){
+  const d=parseInt(el('pay-day')?.value||25);
+  CFG.payDay=d;
+  localStorage.setItem('sa_cfg',JSON.stringify(CFG));
+  if(FB_READY&&db)db.collection('config').doc('fees').set(CFG).catch(e=>{});
+  updateNextPayday();
+  toast('✅ 급여지급일 저장: 매월 '+d+'일');
+}
+
+function updateNextPayday(){
+  const d=CFG.payDay||25;
+  const now=new Date();
+  let next=new Date(now.getFullYear(),now.getMonth(),d);
+  if(next<=now)next=new Date(now.getFullYear(),now.getMonth()+1,d);
+  const span=el('next-payday');
+  if(span)span.textContent='다음 지급일: '+next.toLocaleDateString('ko-KR');
+}
+
+async function renderLedger(){
+  const yr=gv('ledger-year')||new Date().getFullYear();
+  const mo=parseInt(gv('ledger-month')||0);
+  const tbody=el('ledger-tbody');
+  if(!tbody)return;
+
+  // 모든 급여 기록 수집
+  const records=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('salary_rec_')){
+      const r=JSON.parse(localStorage.getItem(k)||'{}');
+      if(r.year==yr&&(mo===0||r.month==mo))records.push(r);
+    }
+  }
+
+  // Firestore에서도 로드
+  if(FB_READY&&db){
+    try{
+      const snap=await db.collection('salaries').get();
+      snap.forEach(doc=>{
+        const r=doc.data();
+        if(r.year==yr&&(mo===0||r.month==mo)){
+          if(!records.find(x=>x.uid===r.uid&&x.month===r.month))records.push(r);
+        }
+      });
+    }catch(e){}
+  }
+
+  if(!records.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);">급여 기록이 없어요</td></tr>';
+    el('ledger-total').style.display='none';
+    return;
+  }
+
+  // 선생님 이름 맵
+  const userMap={};
+  if(FB_READY&&db){
+    try{
+      const snap=await db.collection('users').get();
+      snap.forEach(d=>userMap[d.id]=d.data().name||d.data().email);
+    }catch(e){}
+  }
+
+  let totalNet=0;
+  tbody.innerHTML=records.sort((a,b)=>a.month-b.month).map(r=>{
+    const hourly=parseFloat(r.hourly||0);
+    const hours=parseFloat(r.hours||0);
+    const days=parseFloat(r.days||0);
+    const extraDays=parseFloat(r.extraDays||0);
+    const extraHours=parseFloat(r.extraHours||0);
+    const bonus=parseFloat(r.bonus||0);
+    const annual=parseFloat(r.annual||0);
+    const leave=parseFloat(r.leave||0);
+    const absent=parseFloat(r.absent||0);
+
+    const actualDays=days-leave-absent;
+    const base=Math.round(hourly*hours*actualDays);
+    const extra=Math.round(hourly*1.5*extraHours*extraDays);
+    const annualPay=Math.round(hourly*hours*annual);
+    const gross=base+extra+bonus+annualPay;
+    // 4대보험 근로자 부담 (간략 계산: 약 9.4%)
+    const insEE=Math.round(gross*0.094);
+    const net=gross-insEE;
+    totalNet+=net;
+
+    const name=userMap[r.uid]||r.uid;
+    const paid=JSON.parse(localStorage.getItem('ledger_paid_'+r.uid+'_'+r.year+'_'+r.month)||'false');
+
+    return `<tr>
+      <td style="font-weight:700;">${name}</td>
+      <td>${r.year}년 ${r.month}월</td>
+      <td style="text-align:right;">${base.toLocaleString()}원</td>
+      <td style="text-align:right;color:var(--sage);">+${(extra+bonus+annualPay).toLocaleString()}원</td>
+      <td style="text-align:right;color:var(--accent);">-${insEE.toLocaleString()}원</td>
+      <td style="text-align:right;font-weight:800;color:var(--blue);">${net.toLocaleString()}원</td>
+      <td style="text-align:center;">
+        <button class="btn btn-sm ${paid?'btn-g':'btn-o'}" style="font-size:.65rem;padding:.2rem .5rem;"
+          onclick="togglePaidStatus('${r.uid}','${r.year}','${r.month}',this)">
+          ${paid?'✅지급':'미지급'}
+        </button>
+      </td>
+      <td style="text-align:center;">
+        <button class="btn btn-o btn-sm" style="font-size:.62rem;padding:.2rem .4rem;"
+          onclick="sendPayslip('${r.uid}','${name}','${r.year}','${r.month}',${net},${gross},${base},${extra+bonus+annualPay},${insEE})">
+          📧 발송
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  el('ledger-total').style.display='block';
+  el('ledger-total-amt').textContent=totalNet.toLocaleString()+'원';
+}
+
+function togglePaidStatus(uid,year,month,btn){
+  const key='ledger_paid_'+uid+'_'+year+'_'+month;
+  const current=JSON.parse(localStorage.getItem(key)||'false');
+  localStorage.setItem(key,JSON.stringify(!current));
+  btn.className=`btn btn-sm ${!current?'btn-g':'btn-o'}`;
+  btn.style.fontSize='.65rem';btn.style.padding='.2rem .5rem';
+  btn.textContent=!current?'✅지급':'미지급';
+  toast(!current?'✅ 지급 완료 처리':'↩ 미지급으로 변경');
+}
+
+function buildPayslipHTML(name, year, month, net, gross, base, allowance, insEE){
+  const payDay=CFG.payDay||25;
+  const academy=CFG.name||'솔브아트';
+  const phone=CFG.phone||'';
+  const insER=Math.round(gross*0.115);
+  // 2024년 기준 요율 (매년 업데이트 필요)
+  const rates={
+    pension:{ee:4.5,er:4.5},health:{ee:3.545,er:3.545},
+    care:{ee:0.4591,er:0.4591},employ:{ee:0.9,er:1.15},indus:{ee:0,er:0.6}
+  };
+  const calcIns=(g,r)=>Math.round(g*r/100);
+
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<style>
+  body{font-family:'Noto Sans KR',sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;}
+  h2{text-align:center;color:#1a1a1a;margin-bottom:4px;}
+  .sub{text-align:center;color:#888;font-size:12px;margin-bottom:20px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+  th{background:#1a1a1a;color:#FFC800;padding:8px;text-align:left;font-size:12px;}
+  td{padding:7px 8px;border-bottom:1px solid #f0e8d0;font-size:13px;}
+  .total{background:#FFC800;font-weight:900;font-size:1.1rem;}
+  .footer{text-align:center;font-size:11px;color:#999;margin-top:20px;border-top:1px solid #eee;padding-top:12px;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+</style></head><body>
+<h2>💵 급여명세서</h2>
+<div class="sub">${year}년 ${month}월 | 지급일: ${year}년 ${month}월 ${payDay}일 | ${academy}</div>
+<table>
+  <tr><th colspan="2">수신인</th></tr>
+  <tr><td>성명</td><td><strong>${name}</strong></td></tr>
+</table>
+<table>
+  <tr><th colspan="2">지급 내역</th></tr>
+  <tr><td>기본급</td><td style="text-align:right;">${base.toLocaleString()}원</td></tr>
+  <tr><td>제수당 (초과근무·상여·연차)</td><td style="text-align:right;">${allowance.toLocaleString()}원</td></tr>
+  <tr style="font-weight:700;background:#fff8e1;"><td>총 지급액</td><td style="text-align:right;">${gross.toLocaleString()}원</td></tr>
+</table>
+<table>
+  <tr><th>공제 항목</th><th style="text-align:center;">근로자 부담</th><th style="text-align:center;">사용자 부담</th></tr>
+  <tr><td>국민연금 (${rates.pension.ee}%/${rates.pension.er}%)</td>
+    <td style="text-align:right;">${calcIns(gross,rates.pension.ee).toLocaleString()}원</td>
+    <td style="text-align:right;">${calcIns(gross,rates.pension.er).toLocaleString()}원</td></tr>
+  <tr><td>건강보험 (${rates.health.ee}%/${rates.health.er}%)</td>
+    <td style="text-align:right;">${calcIns(gross,rates.health.ee).toLocaleString()}원</td>
+    <td style="text-align:right;">${calcIns(gross,rates.health.er).toLocaleString()}원</td></tr>
+  <tr><td>장기요양보험</td>
+    <td style="text-align:right;">${calcIns(gross,rates.care.ee).toLocaleString()}원</td>
+    <td style="text-align:right;">${calcIns(gross,rates.care.er).toLocaleString()}원</td></tr>
+  <tr><td>고용보험 (${rates.employ.ee}%/${rates.employ.er}%)</td>
+    <td style="text-align:right;">${calcIns(gross,rates.employ.ee).toLocaleString()}원</td>
+    <td style="text-align:right;">${calcIns(gross,rates.employ.er).toLocaleString()}원</td></tr>
+  <tr><td>산재보험</td>
+    <td style="text-align:right;">-</td>
+    <td style="text-align:right;">${calcIns(gross,rates.indus.er).toLocaleString()}원</td></tr>
+  <tr style="background:#ffebee;font-weight:700;"><td>공제 합계</td>
+    <td style="text-align:right;color:#c62828;">${insEE.toLocaleString()}원</td>
+    <td style="text-align:right;color:#1565c0;">${insER.toLocaleString()}원</td></tr>
+</table>
+<table>
+  <tr class="total"><td>💰 실수령액</td><td style="text-align:right;font-size:1.2rem;">${net.toLocaleString()}원</td></tr>
+</table>
+<div class="footer">
+  ${academy} · ${phone}<br>
+  본 명세서는 근로기준법 제48조에 의거하여 발급됩니다.
+</div>
+</body></html>`;
+}
+
+function sendPayslip(uid, name, year, month, net, gross, base, allowance, insEE){
+  const html2=buildPayslipHTML(name,year,month,net,gross,base,allowance,insEE);
+  // 새 창에서 미리보기 + 이메일 안내
+  const win=window.open('','_blank');
+  win.document.write(html2);
+  win.document.close();
+  // 이메일 발송 안내
+  setTimeout(()=>{
+    const senderEmail=CFG.senderEmail||'';
+    if(!senderEmail){
+      toast('⚠️ 설정에서 발송자 이메일을 먼저 등록하세요');
+      return;
+    }
+    // EmailJS 또는 mailto 방식
+    const subject=encodeURIComponent(`[${CFG.name||'솔브아트'}] ${year}년 ${month}월 급여명세서`);
+    const body=encodeURIComponent(`${name} 선생님께
+
+${year}년 ${month}월 급여명세서를 첨부합니다.
+실수령액: ${net.toLocaleString()}원
+
+${CFG.name||'솔브아트'} 드림`);
+    window.location.href=`mailto:?subject=${subject}&body=${body}`;
+  },500);
+}
+
+function sendAllPayslips(type){
+  if(type==='email'){
+    toast('📧 각 선생님 급여명세서를 개별 발송하세요 (발송 버튼 클릭)');
+  } else {
+    // 카카오톡 공유 - 카카오 SDK 필요
+    toast('💬 카카오톡 공유: 각 명세서를 캡처 후 공유하세요');
+  }
+}
 
 // ════════════════════════════════════════════
 //  급여 관리
@@ -3381,7 +3691,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;min-width:0;max-width:680px;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;display:flex;flex-direction:column;align-items:center;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -3393,7 +3703,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -3681,15 +3991,14 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .dash-stats{grid-template-columns:repeat(4,1fr);}
   .dash-mid{flex-direction:row;}
   .dsc-val{font-size:2rem;}
-  .content-area{max-width:720px;}
-  .page{padding:1.2rem 1.5rem 5rem;}
+  .page{padding:1.2rem 1.5rem 5rem;max-width:720px;}
 }
 @media(min-width:1024px){
   #sidebar{display:flex;}
   .bnav{display:none !important;}
   .app-body{justify-content:flex-start;}
-  .content-area{max-width:calc(100vw - var(--sidebar-w));}
-  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;}
+  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;}
+  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;width:100%;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
