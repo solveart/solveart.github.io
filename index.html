@@ -1565,11 +1565,29 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   <div class="modal" style="max-width:520px;max-height:92vh;overflow-y:auto;">
     <h3 id="drive-title">🖼 작품 갤러리</h3>
 
+    <!-- 앱 자체 작품 등록 -->
+    <div style="background:var(--gold-pale);border:2px solid var(--border);border-radius:12px;padding:.85rem;margin-bottom:.9rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.65rem;">
+        <div>
+          <div style="font-size:.82rem;font-weight:900;">작품 이미지 등록</div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:.1rem;">큰 파일도 자동으로 줄여 저장합니다</div>
+        </div>
+        <button type="button" class="btn btn-b btn-sm" onclick="document.getElementById('artwork-upload-input').click()">+ 이미지</button>
+        <input type="file" id="artwork-upload-input" accept="image/*" multiple style="display:none;" onchange="handleArtworkUpload(event)">
+      </div>
+      <div id="local-art-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;"></div>
+      <div id="local-art-empty" style="text-align:center;padding:1rem;color:var(--muted);font-size:.75rem;display:none;">등록된 작품 사진이 없어요</div>
+      <div id="local-art-selected" style="display:none;margin-top:.7rem;background:#fff;border:1.5px solid var(--gold-light);border-radius:8px;padding:.55rem;">
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.35rem;">선택된 작품: <span id="local-art-sel-count">0</span>장</div>
+        <button class="btn btn-p btn-sm" onclick="addSelectedToReport()" style="width:100%;">교육 리포트에 추가</button>
+      </div>
+    </div>
+
     <!-- 구글 로그인 필요 안내 -->
     <div id="drive-login-section" style="text-align:center;padding:1.5rem 0;">
       <div style="font-size:3rem;margin-bottom:.8rem;">📁</div>
       <div style="font-size:.88rem;font-weight:700;margin-bottom:.4rem;">구글 드라이브 연동</div>
-      <div style="font-size:.76rem;color:var(--muted);margin-bottom:1rem;">원생의 작품 사진을 불러오려면<br>구글 계정으로 로그인하세요</div>
+      <div style="font-size:.76rem;color:var(--muted);margin-bottom:1rem;">구글 드라이브 사진을 추가로 불러올 때만 사용합니다<br>차단되면 위의 이미지 업로드를 이용하세요</div>
       <button class="btn btn-b" onclick="signInGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:.5rem;">
         <img src="https://www.google.com/favicon.ico" width="16" height="16">
         Google 계정으로 로그인
@@ -2155,7 +2173,7 @@ function renderStudents(){
         </div>
         <div class="stu-actions">
           ${hasPerm('stu_edit')?`<button class="btn btn-o btn-sm" onclick="openEditStu('${s.id}')">수정</button>`:''}
-          ${s.driveId?`<button class="btn btn-b btn-sm" onclick="openDriveGallery('${s.id}','${s.name}','${s.driveId||''}')">🖼 작품</button>`:''}
+          <button class="btn btn-b btn-sm" onclick="openDriveGallery('${s.id}','${s.name}','${s.driveId||''}')">🖼 작품</button>
           ${hasPerm('stu_status')?`<button class="btn btn-gold btn-sm" onclick="openStuMgmt('${s.id}','${s.name}')">관리</button>`:''}
           ${hasPerm('stu_delete')?`<button class="btn btn-r btn-sm" onclick="deleteStu('${s.id}','${s.name}')">삭제</button>`:''}
         </div>
@@ -2290,6 +2308,11 @@ function getCycleStatusText(stu,baseDate=new Date()){
 function getCycleStatusColor(stu,baseDate=new Date()){return hasAnyDueUnpaid(stu,baseDate)?'var(--accent)':'var(--sage)';}
 function getPaymentMemoDefault(c){return c.start>new Date()?'선입금':'';}
 
+let payOpenStuId='';
+let payListFilter='all';
+function setPayFilter(filter){payListFilter=filter;renderPay();}
+function togglePayDetail(stuId){payOpenStuId=payOpenStuId===stuId?'':stuId;renderPay();}
+
 function renderPay(){
   const yr=parseInt(gv('pay-year')||new Date().getFullYear());
   const wrap=el('pay-list');
@@ -2303,32 +2326,46 @@ function renderPay(){
   let allPaid=0,hasUnpaid=0;
   activeStus.forEach(s=>{hasAnyDueUnpaid(s,now)?hasUnpaid++:allPaid++;});
   if(el('pay-summary')){
-    el('pay-summary').innerHTML='<span style="color:var(--sage);font-weight:800;">전체 납부 완료 '+allPaid+'명</span>'
+    el('pay-summary').innerHTML='<span style="color:var(--sage);font-weight:800;">납부완료 '+allPaid+'명</span>'
       +' <span style="color:var(--muted);">·</span> '
-      +'<span style="color:var(--accent);font-weight:800;">미납 있음 '+hasUnpaid+'명</span>';
+      +'<span style="color:var(--accent);font-weight:800;">미납 '+hasUnpaid+'명</span>'
+      +` <button class="btn btn-sm ${payListFilter==='all'?'btn-gold':'btn-o'}" style="padding:.18rem .48rem;font-size:.66rem;margin-left:.35rem;" onclick="setPayFilter('all')">전체</button>`
+      +` <button class="btn btn-sm ${payListFilter==='unpaid'?'btn-gold':'btn-o'}" style="padding:.18rem .48rem;font-size:.66rem;" onclick="setPayFilter('unpaid')">미납만</button>`;
   }
-  wrap.innerHTML=STUS.map(s=>{
+  let list=STUS.map(s=>{
+    const current=getCurrentBillingCycle(s,now);
+    const unpaidDue=getUnpaidDueCycles(s,now);
+    return {s,current,unpaidDue,hasUnpaid:unpaidDue.length>0,statusColor:getCycleStatusColor(s,now)};
+  }).filter(x=>payListFilter==='all'||x.hasUnpaid);
+  list.sort((a,b)=>Number(b.hasUnpaid)-Number(a.hasUnpaid)||String(a.s.name||'').localeCompare(String(b.s.name||''),'ko'));
+  if(!list.length){wrap.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.78rem;">표시할 원생이 없어요</div>';return;}
+  wrap.innerHTML=list.map(({s,current,unpaidDue,hasUnpaid,statusColor})=>{
     const cycles=[];
     for(let m=1;m<=12;m++){
       const cycle=getBillingCycle(s,yr,m);
       if(!isCycleBeforeRegistration(s,cycle))cycles.push(cycle);
     }
-    const current=getCurrentBillingCycle(s,now);
-    const unpaidDue=getUnpaidDueCycles(s,now);
-    const statusColor=getCycleStatusColor(s,now);
-    const unpaidText=unpaidDue.length?unpaidDue.map(c=>c.label).join(', '):'없음';
-    return `<div class="pay-card" style="border-left:4px solid ${statusColor};">
-      <div class="pay-hd">
-        <span class="pay-name">${s.name}</span>
-        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;">
-          <span class="pay-amount">${s.feeType?getFeeLabel(s.feeType,s.sibling):`월 ${Number(s.fee||0).toLocaleString()}원`}</span>
-          <span style="font-size:.68rem;color:var(--muted);">등록일 ${s.regdate||'-'}</span>
-          <span style="font-size:.7rem;font-weight:800;color:${statusColor};">${getCycleStatusText(s,now)}</span>
+    const isOpen=payOpenStuId===s.id;
+    const unpaidText=unpaidDue.length?unpaidDue.map(c=>`${c.keyMonth}회차 ${c.label}`).join(', '):'없음';
+    const paidCount=cycles.filter(c=>isCyclePaid(s,yr,c.keyMonth)).length;
+    const futurePaid=cycles.filter(c=>c.start>now&&isCyclePaid(s,yr,c.keyMonth)).length;
+    return `<div class="pay-card" style="border-left:4px solid ${statusColor};padding:.72rem .85rem;margin-bottom:.48rem;">
+      <div class="pay-hd" style="margin-bottom:.18rem;gap:.5rem;">
+        <div style="min-width:0;flex:1;">
+          <div style="display:flex;align-items:center;gap:.42rem;flex-wrap:wrap;">
+            <span class="pay-name" style="font-size:.9rem;">${s.name}</span>
+            <span class="pay-amount" style="font-size:.74rem;">${s.feeType?getFeeLabel(s.feeType,s.sibling):`월 ${Number(s.fee||0).toLocaleString()}원`}</span>
+            <span style="font-size:.66rem;color:var(--muted);">등록 ${s.regdate||'-'}</span>
+          </div>
+          <div style="font-size:.67rem;color:var(--muted);margin-top:.18rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">현재 ${current.label} · ${paidCount}/${cycles.length}회차 납부${futurePaid?` · 선납 ${futurePaid}회차`:''}</div>
+          <div style="font-size:.67rem;color:${hasUnpaid?'var(--accent)':'var(--sage)'};font-weight:800;margin-top:.12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${hasUnpaid?'미납 '+unpaidText:'미납 없음'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.28rem;flex-shrink:0;">
+          <span style="font-size:.7rem;font-weight:900;color:${statusColor};">${getCycleStatusText(s,now)}</span>
+          <button class="btn ${isOpen?'btn-s':'btn-gold'} btn-sm" style="padding:.28rem .62rem;font-size:.7rem;" onclick="togglePayDetail('${s.id}')">${isOpen?'접기':'상세'}</button>
         </div>
       </div>
-      <div style="font-size:.67rem;color:var(--muted);margin-bottom:.25rem;">현재 주기: ${current.fullLabel}</div>
-      <div style="font-size:.67rem;color:${unpaidDue.length?'var(--accent)':'var(--muted)'};font-weight:${unpaidDue.length?'800':'500'};margin-bottom:.45rem;">미납 회차: ${unpaidText}</div>
-      <div class="pay-months">
+      ${isOpen?`<div class="pay-months" style="margin-top:.55rem;padding-top:.55rem;border-top:1px dotted var(--gold-light);">
         ${cycles.map(c=>{
           const paid=isCyclePaid(s,yr,c.keyMonth);
           const memo=getCycleMemo(s,yr,c.keyMonth);
@@ -2337,7 +2374,7 @@ function renderPay(){
           const extraStyle=(isNow?'border-color:var(--accent);box-shadow:0 0 0 2px rgba(244,67,54,.12);':'')+(isFuture?'outline:2px dotted rgba(21,101,192,.25);':'');
           return `<button class="pay-month ${paid?'paid':''}" title="${c.fullLabel}${memo?' · '+memo:''}" style="${extraStyle}" ${hasPerm('pay_edit')?`onclick="togglePay('${s.id}',${yr},${c.keyMonth},this)"`:'disabled style="cursor:default;"'}><span style="display:block;font-size:.62rem;">${c.keyMonth}회차${isFuture?' · 선납':''}</span>${c.label}${memo?`<span style="display:block;font-size:.58rem;margin-top:.08rem;">${memo}</span>`:''}</button>`;
         }).join('')}
-      </div>
+      </div>`:''}
     </div>`;
   }).join('');
 }
@@ -4502,6 +4539,92 @@ const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
 let gapiReady=false,gisReady=false,tokenClient=null,driveAccessToken=null;
 let currentDriveStuId='',currentDriveFolderId='',currentDriveStuName='';
 let selectedDriveFiles=[],drivePageToken=null;
+let localArtworks=[];
+
+function getArtworkKey(stuId){return 'artworks_'+stuId;}
+function getArtworkList(stuId){return JSON.parse(localStorage.getItem(getArtworkKey(stuId))||'[]');}
+function saveArtworkList(stuId,list){localStorage.setItem(getArtworkKey(stuId),JSON.stringify(list));}
+function resizeArtworkImage(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const maxW=960,maxH=720;
+        const ratio=Math.min(maxW/img.width,maxH/img.height,1);
+        const w=Math.max(1,Math.round(img.width*ratio)),h=Math.max(1,Math.round(img.height*ratio));
+        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',0.72));
+      };
+      img.onerror=()=>reject(new Error('이미지를 읽을 수 없어요'));
+      img.src=e.target.result;
+    };
+    reader.onerror=()=>reject(new Error('파일 읽기 실패'));
+    reader.readAsDataURL(file);
+  });
+}
+async function loadArtworks(stuId){
+  let list=getArtworkList(stuId);
+  if(FB_READY&&db){
+    try{
+      const snap=await db.collection('students').doc(stuId).collection('artworks').orderBy('createdAt','desc').get();
+      const remote=[];snap.forEach(d=>remote.push({id:d.id,...d.data()}));
+      const ids=new Set(remote.map(a=>a.id));
+      list=[...remote,...list.filter(a=>!ids.has(a.id))].sort((a,b)=>(b.createdAt||'')>(a.createdAt||'')?1:-1);
+      saveArtworkList(stuId,list);
+    }catch(e){console.warn('작품 로드 오류:',e);}
+  }
+  localArtworks=list;renderLocalArtworks();
+}
+function renderLocalArtworks(){
+  const grid=el('local-art-grid'),empty=el('local-art-empty'),bar=el('local-art-selected'),cnt=el('local-art-sel-count');
+  if(!grid)return;
+  if(!localArtworks.length){grid.innerHTML='';if(empty)empty.style.display='block';if(bar)bar.style.display='none';return;}
+  if(empty)empty.style.display='none';
+  const selectedIds=new Set(selectedDriveFiles.filter(f=>f.source==='local').map(f=>f.id));
+  grid.innerHTML=localArtworks.map(a=>{
+    const on=selectedIds.has(a.id);
+    return `<div class="drive-photo-card" id="art-${a.id}" style="outline:${on?'3px solid var(--gold)':'none'};">
+      <img src="${a.thumb}" alt="${a.name||'작품'}" onclick="toggleLocalArtwork('${a.id}')" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:2px solid var(--gold-light);">
+      <div onclick="toggleLocalArtwork('${a.id}')" style="font-size:.62rem;color:var(--muted);margin-top:.22rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;">${a.name||'작품'} · ${(a.date||'').slice(5)||''}</div>
+      <div class="drive-check-icon" style="display:${on?'flex':'none'};">✓</div>
+      ${hasPerm('stu_edit')?`<button class="btn btn-o btn-sm" onclick="deleteLocalArtwork('${a.id}')" style="position:absolute;left:4px;top:4px;padding:.08rem .28rem;font-size:.58rem;background:#fff;">삭제</button>`:''}
+    </div>`;
+  }).join('');
+  const n=selectedDriveFiles.length;if(bar)bar.style.display=n?'block':'none';if(cnt)cnt.textContent=n;
+}
+function toggleLocalArtwork(id){
+  const art=localArtworks.find(a=>a.id===id);if(!art)return;
+  const idx=selectedDriveFiles.findIndex(f=>f.id===id&&f.source==='local');
+  if(idx>=0)selectedDriveFiles.splice(idx,1);
+  else selectedDriveFiles.push({source:'local',id:art.id,name:art.name,thumb:art.thumb,date:art.date});
+  renderLocalArtworks();
+}
+async function handleArtworkUpload(event){
+  const files=[...(event.target.files||[])];if(!files.length)return;
+  if(!currentDriveStuId){toast('원생을 먼저 선택하세요');return;}
+  showOv('작품 이미지 줄이는 중…');
+  try{
+    for(const file of files){
+      const thumb=await resizeArtworkImage(file);
+      const baseName=file.name.replace(/\.[^.]+$/,'');
+      const name=prompt('작품명을 입력하세요',baseName)||baseName||'작품';
+      const art={id:'art_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name,thumb,date:today(),createdAt:new Date().toISOString(),createdBy:CU?.uid||''};
+      localArtworks.unshift(art);
+      if(FB_READY&&db){try{await db.collection('students').doc(currentDriveStuId).collection('artworks').doc(art.id).set(art);}catch(e){console.warn('작품 저장 오류:',e);}}
+    }
+    saveArtworkList(currentDriveStuId,localArtworks);renderLocalArtworks();toast('작품 이미지 등록 완료');
+  }catch(e){toast('작품 이미지 처리 오류: '+e.message);}finally{event.target.value='';hideOv();}
+}
+async function deleteLocalArtwork(id){
+  if(!confirm('이 작품 사진을 삭제할까요?'))return;
+  localArtworks=localArtworks.filter(a=>a.id!==id);
+  selectedDriveFiles=selectedDriveFiles.filter(f=>!(f.id===id&&f.source==='local'));
+  saveArtworkList(currentDriveStuId,localArtworks);
+  if(FB_READY&&db){try{await db.collection('students').doc(currentDriveStuId).collection('artworks').doc(id).delete();}catch(e){console.warn('작품 삭제 오류:',e);}}
+  renderLocalArtworks();toast('작품 사진 삭제 완료');
+}
 
 function initGapi(){
   gapi.load('client',async()=>{
@@ -4538,14 +4661,15 @@ function signOutGoogle(){
 }
 function openDriveGallery(stuId,stuName,folderId){
   currentDriveStuId=stuId;currentDriveStuName=stuName;currentDriveFolderId=folderId;
-  selectedDriveFiles=[];drivePageToken=null;
+  selectedDriveFiles=[];drivePageToken=null;localArtworks=[];
   el('drive-title').textContent='🖼 '+stuName+' 작품 갤러리';
   el('drive-grid').innerHTML='';
   el('drive-empty').style.display='none';
   el('drive-loading').style.display='none';
   el('drive-selected-bar').style.display='none';
   el('drive-page-info').textContent='';
-  el('drive-folder-info').textContent='📁 폴더: '+folderId;
+  el('drive-folder-info').textContent=folderId?'📁 폴더: '+folderId:'📁 연결된 구글 드라이브 폴더 없음';
+  loadArtworks(stuId);
   if(driveAccessToken){
     el('drive-login-section').style.display='none';
     el('drive-gallery-section').style.display='block';
@@ -4553,11 +4677,12 @@ function openDriveGallery(stuId,stuName,folderId){
   } else {
     el('drive-login-section').style.display='block';
     el('drive-gallery-section').style.display='none';
-    if(!gapiReady)initGapi();if(!gisReady)initGis();
+    if(folderId){if(!gapiReady)initGapi();if(!gisReady)initGis();}
   }
   el('modal-drive').classList.add('show');
 }
 async function showDriveGallery(){
+  if(!currentDriveFolderId){toast('구글 드라이브 폴더 ID가 없어요. 이미지 업로드를 이용하세요');return;}
   el('drive-login-section').style.display='none';
   el('drive-gallery-section').style.display='block';
   el('drive-loading').style.display='block';
