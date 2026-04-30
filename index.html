@@ -20,7 +20,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--gold-pale);color:var
 
 /* ── 로그인 ── */
 #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;background:var(--gold);}
-.login-box{background:#fff;border-radius:20px;padding:2.2rem 2rem;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.18),0 0 0 4px rgba(255,255,255,.5);}
+.login-box{background:#fff;border-radius:20px;padding:2.2rem 2rem;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.18),0 0 0 4px rgba(255,255,255,.5);}
 .login-logo{text-align:center;margin-bottom:1.8rem;}
 .login-logo img{width:140px;height:auto;object-fit:contain;margin-bottom:.6rem;}
 .login-logo h1{font-size:1.4rem;font-weight:900;color:var(--ink);margin-bottom:.2rem;}
@@ -59,7 +59,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -71,7 +71,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;max-width:680px;margin:0 auto;width:100%;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -237,7 +237,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .perm-btn.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:900;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:1rem;}
 .modal-bg.show{display:flex;}
-.modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:fadeIn .2s ease;border-top:4px solid var(--gold);}
+.modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:fadeIn .2s ease;border-top:4px solid var(--gold);}
 .modal h3{font-size:1rem;font-weight:900;margin-bottom:.95rem;}
 .modal-footer{display:flex;gap:.45rem;margin-top:.95rem;justify-content:flex-end;}
 .tcard{background:#fff;border:2px solid var(--gold-light);border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.8rem;box-shadow:var(--shadow);}
@@ -359,11 +359,12 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .dash-stats{grid-template-columns:repeat(4,1fr);}
   .dash-mid{flex-direction:row;}
   .dsc-val{font-size:2rem;}
+  .page{padding:1.2rem 1.5rem 5rem;max-width:720px;}
 }
 @media(min-width:1024px){
   #sidebar{display:flex;}
   .bnav{display:none !important;}
-  .page{padding:1.5rem 2rem;}
+  .page{padding:1.5rem 2rem;max-width:900px;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
@@ -373,6 +374,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .stats{grid-template-columns:repeat(2,1fr);}
   .stu-actions{flex-direction:column;gap:.25rem;}
   .stu-actions .btn{font-size:.65rem;padding:.28rem .5rem;}
+  .page{padding:.8rem .8rem 5rem;}
 }
 </style>
   <!-- Google Identity Services -->
@@ -2848,7 +2850,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--gold-pale);color:var
 
 /* ── 로그인 ── */
 #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;background:var(--gold);}
-.login-box{background:#fff;border-radius:20px;padding:2.2rem 2rem;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.18),0 0 0 4px rgba(255,255,255,.5);}
+.login-box{background:#fff;border-radius:20px;padding:2.2rem 2rem;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.18),0 0 0 4px rgba(255,255,255,.5);}
 .login-logo{text-align:center;margin-bottom:1.8rem;}
 .login-logo img{width:140px;height:auto;object-fit:contain;margin-bottom:.6rem;}
 .login-logo h1{font-size:1.4rem;font-weight:900;color:var(--ink);margin-bottom:.2rem;}
@@ -2887,7 +2889,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -2899,7 +2901,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;max-width:680px;margin:0 auto;width:100%;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -3065,7 +3067,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .perm-btn.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:900;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:1rem;}
 .modal-bg.show{display:flex;}
-.modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:fadeIn .2s ease;border-top:4px solid var(--gold);}
+.modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:fadeIn .2s ease;border-top:4px solid var(--gold);}
 .modal h3{font-size:1rem;font-weight:900;margin-bottom:.95rem;}
 .modal-footer{display:flex;gap:.45rem;margin-top:.95rem;justify-content:flex-end;}
 .tcard{background:#fff;border:2px solid var(--gold-light);border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.8rem;box-shadow:var(--shadow);}
@@ -3187,11 +3189,12 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .dash-stats{grid-template-columns:repeat(4,1fr);}
   .dash-mid{flex-direction:row;}
   .dsc-val{font-size:2rem;}
+  .page{padding:1.2rem 1.5rem 5rem;max-width:720px;}
 }
 @media(min-width:1024px){
   #sidebar{display:flex;}
   .bnav{display:none !important;}
-  .page{padding:1.5rem 2rem;}
+  .page{padding:1.5rem 2rem;max-width:900px;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
@@ -3201,6 +3204,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .stats{grid-template-columns:repeat(2,1fr);}
   .stu-actions{flex-direction:column;gap:.25rem;}
   .stu-actions .btn{font-size:.65rem;padding:.28rem .5rem;}
+  .page{padding:.8rem .8rem 5rem;}
 }
 
 </body>
