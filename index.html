@@ -1394,15 +1394,22 @@ function renderPay(){
   if(!STUS.length){wrap.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.78rem;">등록된 원생이 없어요<br><br><button class="btn btn-b btn-sm" onclick="stuTab(\'list\',document.querySelector(\'.tab\'))">+ 원생 등록</button></div>';return;}
   let unpaidCnt=0;
   let totalExpected=0,totalPaid=0;
+  const curMonth=new Date().getMonth()+1;
+  const activeStus2=STUS.filter(s=>!s.status||s.status==='active');
   wrap.innerHTML=STUS.map(s=>{
     const pays=JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}');
     const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-    const hasUnpaid=months.some((m,i)=>!pays[i+1]);
-    if(hasUnpaid)unpaidCnt++;
-    return `<div class="pay-card">
+    // 현재 달 기준 미납 여부
+    const isUnpaidThisMonth=(yr===new Date().getFullYear())&&!pays[curMonth];
+    if(isUnpaidThisMonth)unpaidCnt++;
+    const thisPaid=pays[curMonth];
+    return `<div class="pay-card" style="border-left:4px solid ${thisPaid?'var(--sage)':'var(--accent)'};">
       <div class="pay-hd">
         <span class="pay-name">${s.name}</span>
-        <span class="pay-amount">${s.feeType?getFeeLabel(s.feeType,s.sibling):`월 ${Number(s.fee||0).toLocaleString()}원`}</span>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <span class="pay-amount">${s.feeType?getFeeLabel(s.feeType,s.sibling):`월 ${Number(s.fee||0).toLocaleString()}원`}</span>
+          <span style="font-size:.7rem;font-weight:800;color:${thisPaid?'var(--sage)':'var(--accent)'};">${thisPaid?'✓ 납부':'✕ 미납'}</span>
+        </div>
       </div>
       <div class="pay-months">
         ${months.map((m,i)=>{
@@ -1412,7 +1419,11 @@ function renderPay(){
       </div>
     </div>`;
   }).join('');
-  el('pay-summary').textContent=`미납 ${unpaidCnt}명`;
+  const paidCnt=activeStus2.length-unpaidCnt;
+  el('pay-summary').innerHTML=
+    '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt+'명</span>'
+    +' <span style="color:var(--muted);">·</span> '
+    +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
   // 연도 셀렉트
   const yEl=el('pay-year');if(!yEl.options.length){
     const now=new Date().getFullYear();
@@ -1426,13 +1437,19 @@ function togglePay(stuId,year,month,btn){
   pays[month]=!pays[month];
   localStorage.setItem(key,JSON.stringify(pays));
   btn.className=`pay-month ${pays[month]?'paid':''}`;
-  // 미납 카운트 갱신
+  // 미납 카운트 갱신 — 현재 달 기준으로만 계산
+  const curMonth=new Date().getMonth()+1;
+  const curYear=new Date().getFullYear();
   let unpaidCnt=0;
   STUS.forEach(s=>{
-    const p=JSON.parse(localStorage.getItem(`pay_${s.id}_${year}`)||'{}');
-    if([1,2,3,4,5,6,7,8,9,10,11,12].some(m=>!p[m]))unpaidCnt++;
+    const p=JSON.parse(localStorage.getItem(`pay_${s.id}_${curYear}`)||'{}');
+    if(!p[curMonth]) unpaidCnt++;
   });
-  el('pay-summary').textContent=`미납 ${unpaidCnt}명`;
+  const paidCnt2=STUS.filter(s=>!s.status||s.status==='active').length - unpaidCnt;
+  el('pay-summary').innerHTML=
+    '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt2+'명</span>'
+    +' <span style="color:var(--muted);">·</span> '
+    +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
 }
 
 // ════════════════════════════════════════════
@@ -1833,7 +1850,9 @@ function renderHome(){
     const t=d.p+d.a,r=t?Math.round(d.p/t*100):0,ac=d.c.length?(d.c.reduce((a,b)=>a+b)/d.c.length).toFixed(1):'-';
     const stu=STUS.find(s=>s.name===nm);
     const paid=stu?JSON.parse(localStorage.getItem(`pay_${stu.id}_${yr}`)||'{}')[cm]:null;
-    const payBdg=stu?(paid?'<span class="bdg b-pay">납부</span>':'<span class="bdg b-unpay">미납</span>'):'';
+    const payBdg=stu?(paid
+      ?'<span class="bdg" style="background:#E8F5E9;color:#1B5E20;font-weight:800;">✓ 납부</span>'
+      :'<span class="bdg" style="background:#FFEBEE;color:#B71C1C;font-weight:800;">✕ 미납</span>'):'';
     const statusBdg=stu?.status==='out'?'<span class="bdg br" style="font-size:.55rem;margin-left:3px;">퇴원</span>':stu?.status==='pause'?'<span class="bdg bo" style="font-size:.55rem;margin-left:3px;">휴강</span>':'';
     return `<tr><td><strong>${nm}</strong>${statusBdg}</td><td style="color:var(--sage);font-weight:700;">${d.p}</td><td style="color:var(--accent);font-weight:700;">${d.a}</td><td style="font-weight:700;">${ac}</td><td>${payBdg}</td></tr>`;
   }).join(''):'<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.8rem;">이달 기록 없음</td></tr>';
