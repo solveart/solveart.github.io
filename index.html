@@ -388,13 +388,8 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   margin-right:auto !important;
 }
 @media(min-width:1024px){
-  .content-area{
-    align-items:center !important;
-  }
-  #main-app .page{
-    width:min(100%,720px) !important;
-    max-width:720px !important;
-  }
+  .content-area{align-items:center !important;}
+  #main-app .page{width:min(100%,720px) !important;max-width:720px !important;}
 }</style>
   <!-- SheetJS for Excel parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -715,12 +710,12 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;">
       <div>
         <select id="salary-stu-sel" class="inp" style="width:140px;" onchange="loadSalaryInfo()">
-          <option value="">-- 선생님 선택 --</option>
+          <option value="">전체 선택</option>
         </select>
       </div>
       <div style="display:flex;gap:.4rem;">
-        <select id="salary-year" class="inp" style="width:80px;" onchange="calcSalary()"></select>
-        <select id="salary-month" class="inp" style="width:70px;" onchange="calcSalary()">
+        <select id="salary-year" class="inp" style="width:80px;" onchange="salaryPeriodChanged()"></select>
+        <select id="salary-month" class="inp" style="width:70px;" onchange="salaryPeriodChanged()">
           <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
           <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
           <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
@@ -2725,7 +2720,7 @@ function aTab(id,btn){
   if(activePane)activePane.style.display='block';
   if(id==='teachers')loadTeachers();
   if(id==='monitor'){sv('mon-date',today());loadMonitor();}
-  if(id==='salary'){loadSalaryTeachers();}
+  if(id==='salary'){loadSalaryTeachers();showSalaryLedger();}
   if(id==='finance'){initFinance();loadFinanceFromDB();}
   if(id==='ledger'){initLedger();}
   if(id==='config'){
@@ -3176,6 +3171,8 @@ async function renderLedger(){
 
   // 선생님 이름 맵
   const userMap={};
+  salaryTeacherCache.forEach(t=>userMap[t.uid]=t.name||t.email||t.uid);
+  JSON.parse(localStorage.getItem('sa_demo_users')||'[]').forEach(u=>{userMap[u.uid]=u.name||u.email||u.uid;});
   if(FB_READY&&db){
     try{
       const snap=await db.collection('users').get();
@@ -3209,7 +3206,7 @@ async function renderLedger(){
     const paid=JSON.parse(localStorage.getItem('ledger_paid_'+r.uid+'_'+r.year+'_'+r.month)||'false');
 
     return `<tr>
-      <td style="font-weight:700;">${name}</td>
+      <td style="font-weight:700;"><button class="btn btn-o btn-sm" style="font-size:.7rem;padding:.2rem .55rem;" onclick="selectSalaryTeacher('${r.uid}','${r.year}','${r.month}')">${name}</button></td>
       <td>${r.year}년 ${r.month}월</td>
       <td style="text-align:right;">${base.toLocaleString()}원</td>
       <td style="text-align:right;color:var(--sage);">+${(extra+bonus+annualPay).toLocaleString()}원</td>
@@ -3696,60 +3693,97 @@ async function loadFinanceFromDB(){
 // ════════════════════════════════════════════
 let currentSalaryUid = '';
 let salaryProfileData = {};
+let salaryTeacherCache = [];
 
-function loadSalaryTeachers(){
+async function loadSalaryTeachers(){
   const sel = el('salary-stu-sel');
   if(!sel) return;
-  // Firestore에서 선생님 목록 로드
+  const prev = sel.value;
+  const list = [];
   if(FB_READY&&db){
-    db.collection('users').get().then(snap=>{
-      sel.innerHTML='<option value="">-- 선생님 선택 --</option>';
+    try{
+      const snap = await db.collection('users').get();
       snap.forEach(doc=>{
         const d=doc.data();
-        if(d.role!=='admin'){
-          sel.innerHTML+=`<option value="${doc.id}">${d.name||d.email}</option>`;
-        }
+        if(d.role!=='admin') list.push({uid:doc.id,name:d.name||d.email||doc.id,email:d.email||''});
       });
+    }catch(e){}
+  }
+  if(!list.length){
+    JSON.parse(localStorage.getItem('sa_demo_users')||'[]').forEach(u=>{
+      if(u.role!=='admin')list.push({uid:u.uid,name:u.name||u.email||u.uid,email:u.email||''});
     });
   }
-  // 연도 셀렉트
+  salaryTeacherCache=list.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  sel.innerHTML='<option value="">전체 선택</option>'+salaryTeacherCache.map(t=>`<option value="${t.uid}">${t.name}</option>`).join('');
+  if(prev&&salaryTeacherCache.find(t=>t.uid===prev))sel.value=prev;
+
   const yrSel=el('salary-year');
   if(yrSel&&!yrSel.options.length){
     const now=new Date().getFullYear();
     for(let y=now-1;y<=now+1;y++)yrSel.innerHTML+=`<option value="${y}" ${y===now?'selected':''}>${y}년</option>`;
   }
-  // 현재 월 기본 선택
   const mSel=el('salary-month');
-  if(mSel) mSel.value=new Date().getMonth()+1;
+  if(mSel&&!mSel.value)mSel.value=new Date().getMonth()+1;
+}
+
+function showSalaryLedger(){
+  currentSalaryUid='';
+  if(el('salary-stu-sel'))el('salary-stu-sel').value='';
+  ['salary-profile-card','salary-calc-card','salary-history-card'].forEach(id=>{if(el(id))el(id).style.display='none';});
+  if(el('at-ledger'))el('at-ledger').style.display='block';
+  initLedger();
+}
+
+function salaryPeriodChanged(){
+  if(currentSalaryUid){loadSelectedSalaryRecord();calcSalary();}
+  else{
+    if(el('ledger-year')&&gv('salary-year'))el('ledger-year').value=gv('salary-year');
+    if(el('ledger-month')&&gv('salary-month'))el('ledger-month').value=gv('salary-month');
+    renderLedger();
+  }
 }
 
 function loadSalaryInfo(){
   currentSalaryUid=gv('salary-stu-sel');
-  if(!currentSalaryUid){
-    el('salary-profile-card').style.display='none';
-    el('salary-calc-card').style.display='none';
-    el('salary-history-card').style.display='none';
-    return;
-  }
+  if(!currentSalaryUid){showSalaryLedger();return;}
+  if(el('at-ledger'))el('at-ledger').style.display='none';
   el('salary-profile-card').style.display='block';
   el('salary-calc-card').style.display='block';
   el('salary-history-card').style.display='block';
 
-  // 신상명세 로드
   const key='salary_profile_'+currentSalaryUid;
   salaryProfileData=JSON.parse(localStorage.getItem(key)||'{}');
   renderSalaryProfile();
-
-  // 급여 기록 로드
   loadSalaryHistory();
 
-  // 최저임금 기본값
   if(!el('sal-hourly').value) el('sal-hourly').value=10030;
   if(!el('sal-hours').value) el('sal-hours').value=8;
   if(!el('sal-days').value) el('sal-days').value=22;
+  loadSelectedSalaryRecord();
   calcSalary();
 }
 
+function selectSalaryTeacher(uid,year,month){
+  if(el('salary-stu-sel'))el('salary-stu-sel').value=uid;
+  if(year&&el('salary-year'))el('salary-year').value=year;
+  if(month&&el('salary-month'))el('salary-month').value=parseInt(month);
+  loadSalaryInfo();
+  setTimeout(()=>el('at-salary')?.scrollIntoView({behavior:'smooth',block:'start'}),50);
+}
+
+function loadSelectedSalaryRecord(){
+  if(!currentSalaryUid)return;
+  const yr=gv('salary-year')||new Date().getFullYear();
+  const mo=gv('salary-month')||new Date().getMonth()+1;
+  const key='salary_rec_'+currentSalaryUid+'_'+yr+'_'+mo;
+  const r=JSON.parse(localStorage.getItem(key)||'null');
+  if(!r)return;
+  sv('sal-hourly',r.hourly||'');sv('sal-hours',r.hours||'');sv('sal-days',r.days||'');
+  sv('sal-extra-days',r.extraDays||'');sv('sal-extra-hours',r.extraHours||'');
+  sv('sal-bonus',r.bonus||'');sv('sal-annual',r.annual||'');
+  sv('sal-leave',r.leave||'');sv('sal-absent',r.absent||'');
+}
 function renderSalaryProfile(){
   const d=salaryProfileData;
   const view=el('salary-profile-view');
