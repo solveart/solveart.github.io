@@ -283,6 +283,23 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .toast{position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:.55rem 1.1rem;border-radius:10px;font-size:.78rem;opacity:0;transition:all .3s;z-index:1000;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);border-left:4px solid var(--gold);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* ══ 세부 권한 테이블 ══ */
+.perm-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:.5rem;}
+.perm-table th{background:var(--ink);color:#fff;padding:.4rem .5rem;font-size:.68rem;font-weight:600;text-align:center;}
+.perm-table th:first-child{text-align:left;border-radius:6px 0 0 0;}
+.perm-table th:last-child{border-radius:0 6px 0 0;}
+.perm-table td{padding:.45rem .5rem;border-bottom:1px solid var(--gold-light);vertical-align:middle;}
+.perm-table tr:last-child td{border-bottom:none;}
+.perm-table tr:hover td{background:var(--gold-pale);}
+.perm-section{font-size:.65rem;font-weight:800;color:var(--muted);letter-spacing:.1em;background:var(--gold-pale);padding:.3rem .5rem;border-bottom:1px solid var(--border);}
+.perm-toggle{width:36px;height:20px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;position:relative;flex-shrink:0;}
+.perm-toggle.on{background:var(--sage);}
+.perm-toggle.off{background:#ccc;}
+.perm-toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.perm-toggle.on::after{left:19px;}
+.perm-toggle.off::after{left:3px;}
+.perm-cell{display:flex;justify-content:center;}
+
 /* ══ 드라이브 갤러리 ══ */
 .drive-photo-card{position:relative;cursor:pointer;border-radius:8px;overflow:hidden;transition:transform .15s;}
 .drive-photo-card:hover{transform:scale(1.03);}
@@ -565,7 +582,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
     </div>
     <div style="margin-bottom:.8rem;display:flex;gap:.5rem;">
       <input id="stu-q" class="inp" style="flex:1;" placeholder="🔍 원생 이름 검색" oninput="renderStudents()">
-      <button class="btn btn-b btn-sm" onclick="openAddStu()">+ 등록</button>
+      <button class="btn btn-b btn-sm" id="btn-add-stu" onclick="openAddStu()">+ 등록</button>
     </div>
     <div id="stu-list-wrap"></div>
   </div>
@@ -971,15 +988,17 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   </div>
 </div>
 
-<!-- 모달: 권한 편집 -->
+<!-- 모달: 세부 권한 편집 -->
 <div class="modal-bg" id="modal-perm">
-  <div class="modal">
+  <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto;">
     <h3 id="perm-title">권한 편집</h3>
-    <div class="perm-wrap">
-      <button class="perm-btn" id="ep-input" onclick="tEP('input')">📝 수업입력</button>
-      <button class="perm-btn" id="ep-view" onclick="tEP('view')">👁 열람</button>
-      <button class="perm-btn" id="ep-report" onclick="tEP('report')">📊 보고서</button>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:.9rem;padding:.5rem .7rem;background:var(--gold-pale);border-radius:8px;border:1px solid var(--border);">
+      🔑 각 메뉴별로 <strong>열람</strong> · <strong>등록/수정</strong> 권한을 설정하세요
     </div>
+
+    <!-- 권한 테이블 -->
+    <div id="perm-table-wrap"></div>
+
     <div class="modal-footer">
       <button class="btn btn-o btn-sm" onclick="closeM('modal-perm')">취소</button>
       <button class="btn btn-g btn-sm" onclick="savePerms()">저장</button>
@@ -1193,6 +1212,11 @@ function showApp(){
   rb.className='rbdg '+(isA?'r-admin':'r-teacher');
   sv('r-teacher',CP?.name||'');sv('r-date',today());sv('mon-date',today());sv('sel-month',today().slice(0,7));
   renderHome();initMyPage();loadStudentsFromDB();
+  // 권한에 따라 버튼 표시 제어
+  setTimeout(()=>{
+    const addBtn=el('btn-add-stu');
+    if(addBtn)addBtn.style.display=hasPerm('stu_add')?'':'none';
+  },100);
   if(isA&&el('fb-auth-badge')){
     el('fb-auth-badge').textContent=FB_READY?'⬤ 연결됨':'⬤ 데모';
     el('fb-auth-badge').className='apist '+(FB_READY?'ok':'no');
@@ -1210,9 +1234,22 @@ async function loadStudentsFromDB(){
       const snap=await db.collection('students').orderBy('name').get();
       STUS=[];snap.forEach(d=>STUS.push({id:d.id,...d.data()}));
       localStorage.setItem('sa_stus',JSON.stringify(STUS));
+      // 수강료 데이터도 Firestore에서 로드
+      await loadPaymentsFromDB();
     }catch(e){STUS=JSON.parse(localStorage.getItem('sa_stus')||'[]');}
   }
   updStuSelects();
+}
+
+async function loadPaymentsFromDB(){
+  if(!FB_READY||!db)return;
+  try{
+    const yr=new Date().getFullYear();
+    const snap=await db.collection('payments').get();
+    snap.forEach(doc=>{
+      localStorage.setItem(doc.id, JSON.stringify(doc.data()));
+    });
+  }catch(e){console.warn('수강료 로드 오류:',e);}
 }
 
 function updStuSelects(){
@@ -1334,10 +1371,10 @@ function renderStudents(){
           ${s.feeType?`<p style="font-size:.68rem;color:var(--blue);margin-top:.1rem;">${getFeeLabel(s.feeType,s.sibling)}</p>`:''}
         </div>
         <div class="stu-actions">
-          <button class="btn btn-o btn-sm" onclick="openEditStu('${s.id}')">수정</button>
+          ${hasPerm('stu_edit')?`<button class="btn btn-o btn-sm" onclick="openEditStu('${s.id}')">수정</button>`:''}
           ${s.driveId?`<button class="btn btn-b btn-sm" onclick="openDriveGallery('${s.id}','${s.name}','${s.driveId||''}')">🖼 작품</button>`:''}
-          <button class="btn btn-gold btn-sm" onclick="openStuMgmt('${s.id}','${s.name}')">관리</button>
-          <button class="btn btn-r btn-sm" onclick="deleteStu('${s.id}','${s.name}')">삭제</button>
+          ${hasPerm('stu_status')?`<button class="btn btn-gold btn-sm" onclick="openStuMgmt('${s.id}','${s.name}')">관리</button>`:''}
+          ${hasPerm('stu_delete')?`<button class="btn btn-r btn-sm" onclick="deleteStu('${s.id}','${s.name}')">삭제</button>`:''}
         </div>
       </div>
       ${s.slots?.length?`<div class="stu-slots">${s.slots.map(sl=>`<span class="stu-slot">⏰ ${sl}</span>`).join('')}</div>`:''}
@@ -1450,7 +1487,7 @@ function renderPay(){
       <div class="pay-months">
         ${months.map((m,i)=>{
           const paid=pays[i+1];
-          return `<button class="pay-month ${paid?'paid':''}" onclick="togglePay('${s.id}',${yr},${i+1},this)">${m}</button>`;
+          return `<button class="pay-month ${paid?'paid':''}" ${hasPerm('pay_edit')?`onclick="togglePay('${s.id}',${yr},${i+1},this)"`:'disabled style="cursor:default;"'}>${m}</button>`;
         }).join('')}
       </div>
     </div>`;
@@ -1475,12 +1512,18 @@ function renderPay(){
   }
 }
 
-function togglePay(stuId,year,month,btn){
+async function togglePay(stuId,year,month,btn){
   const key=`pay_${stuId}_${year}`;
   const pays=JSON.parse(localStorage.getItem(key)||'{}');
   pays[month]=!pays[month];
   localStorage.setItem(key,JSON.stringify(pays));
   btn.className=`pay-month ${pays[month]?'paid':''}`;
+  // Firestore에도 저장
+  if(FB_READY&&db){
+    try{
+      await db.collection('payments').doc(key).set(pays,{merge:true});
+    }catch(e){console.warn('납부 저장 오류:',e);}
+  }
   // 미납 카운트 갱신 — 현재 달 기준으로만 계산
   const curMonth=new Date().getMonth()+1;
   const curYear=new Date().getFullYear();
@@ -1710,7 +1753,7 @@ function dzEv(e,t){e.preventDefault();const dz=el('dz');
   if(t==='dp'){dz.classList.remove('ov');processFile(e.dataTransfer.files[0]);}}
 function handleFile(e){if(e.target.files[0])processFile(e.target.files[0]);}
 function processFile(file){
-  if(CP?.role!=='admin'&&!CP?.perms?.input){toast('⚠️ 수업 입력 권한이 없어요');return;}
+  if(!hasPerm('scan_upload')){toast('⚠️ 스캔 업로드 권한이 없어요');return;}
   const r=new FileReader();r.onload=ev=>{curImg=ev.target.result;doScan();};r.readAsDataURL(file);
 }
 async function doScan(){
@@ -1931,7 +1974,7 @@ function renderHist(){
         <span style="color:var(--muted);font-size:.7rem;">${r.timeSlot||''}</span>
         <span style="color:var(--muted);flex:1;font-size:.72rem;">${r.workName?r.workName+' #'+(r.workNum||1):'-'}</span>
         <span style="color:var(--accent);font-weight:700;font-size:.7rem;">${r.completion?'★'.repeat(r.completion):'-'}</span>
-        <button class="btn btn-o btn-sm" style="padding:.2rem .5rem;font-size:.65rem;" onclick="openEditRec(${r._i})">수정</button>
+        ${hasPerm('hist_edit')||hasPerm('hist_delete')?`<button class="btn btn-o btn-sm" style="padding:.2rem .5rem;font-size:.65rem;" onclick="openEditRec(${r._i})">수정</button>`:''}
       </div>`).join('')}
     </div>`;
   }).join('');
@@ -2083,9 +2126,12 @@ async function loadTeachers(){
           <p>${t.email||''}</p>
           <p style="margin-top:.15rem;">
             <span class="bdg ${isA?'b-admin':'bb'}">${isA?'관리자':'선생님'}</span>
-            ${t.perms?.input?'<span class="bdg bg" style="margin-left:2px">입력</span>':''}
-            ${t.perms?.view?'<span class="bdg bb" style="margin-left:2px">열람</span>':''}
-            ${t.perms?.report?'<span class="bdg bo" style="margin-left:2px">보고서</span>':''}
+            ${t.perms?.scan_upload||t.perms?.input?'<span class="bdg bg" style="margin-left:2px">스캔</span>':''}
+            ${t.perms?.stu_view||t.perms?.view?'<span class="bdg bb" style="margin-left:2px">원생열람</span>':''}
+            ${t.perms?.stu_add?'<span class="bdg bg" style="margin-left:2px">원생등록</span>':''}
+            ${t.perms?.pay_view?'<span class="bdg bo" style="margin-left:2px">수강료</span>':''}
+            ${t.perms?.rpt_view||t.perms?.report?'<span class="bdg bb" style="margin-left:2px">보고서</span>':''}
+            ${t.perms?.hist_edit?'<span class="bdg bo" style="margin-left:2px">기록수정</span>':''}
           </p></div>
         <div class="tactions">
           ${!isSelf?`
@@ -2197,8 +2243,10 @@ async function testConn(){if(!SU){toast('⚠️ URL 미입력');return;}try{cons
 // ════════════════════════════════════════════
 function nav(id){
   if(!CP)return;
-  if(id==='scan'&&CP.role!=='admin'&&!CP.perms?.input){toast('⚠️ 수업 입력 권한이 없어요');return;}
-  if(id==='report'&&CP.role!=='admin'&&!CP.perms?.report&&!CP.perms?.view){toast('⚠️ 보고서 열람 권한이 없어요');return;}
+  if(id==='scan'&&!hasPerm('scan_upload')){toast('⚠️ 스캔 권한이 없어요');return;}
+  if(id==='report'&&!hasPerm('rpt_view')){toast('⚠️ 보고서 열람 권한이 없어요');return;}
+  if(id==='hist'&&!hasPerm('hist_view')){toast('⚠️ 기록 열람 권한이 없어요');return;}
+  if(id==='students'&&!hasPerm('stu_view')){toast('⚠️ 원생 관리 열람 권한이 없어요');return;}
   if(id==='admin'&&CP.role!=='admin'){toast('⚠️ 관리자 전용');return;}
 
   // 페이지 전환
@@ -2490,6 +2538,130 @@ function openStatDetail(type){
   }
 
   modal.classList.add('show');
+}
+
+
+// ════════════════════════════════════════════
+//  세부 권한 관리
+// ════════════════════════════════════════════
+// 권한 구조 정의
+const PERM_STRUCTURE = [
+  { section:'📋 수업일지 스캔', key:'scan', items:[
+    { label:'스캔 업로드', key:'scan_upload' },
+    { label:'결과 수정', key:'scan_edit' },
+    { label:'저장', key:'scan_save' },
+  ]},
+  { section:'👥 원생 관리', key:'students', items:[
+    { label:'원생 목록 열람', key:'stu_view' },
+    { label:'원생 등록', key:'stu_add' },
+    { label:'원생 수정', key:'stu_edit' },
+    { label:'원생 삭제', key:'stu_delete' },
+    { label:'퇴원/휴강 관리', key:'stu_status' },
+  ]},
+  { section:'📅 출석 달력', key:'calendar', items:[
+    { label:'출석 달력 열람', key:'cal_view' },
+  ]},
+  { section:'💳 수강료 관리', key:'payment', items:[
+    { label:'수강료 열람', key:'pay_view' },
+    { label:'납부 등록/수정', key:'pay_edit' },
+  ]},
+  { section:'📁 전체 기록', key:'history', items:[
+    { label:'기록 열람', key:'hist_view' },
+    { label:'기록 수정', key:'hist_edit' },
+    { label:'기록 삭제', key:'hist_delete' },
+  ]},
+  { section:'📊 보고서', key:'report', items:[
+    { label:'보고서 열람', key:'rpt_view' },
+    { label:'리포트 출력', key:'rpt_print' },
+  ]},
+  { section:'🖼 구글 드라이브', key:'drive', items:[
+    { label:'작품 갤러리 열람', key:'drive_view' },
+    { label:'교육 리포트 생성', key:'drive_report' },
+  ]},
+];
+
+// 기본 권한 (신규 선생님)
+const DEFAULT_PERMS = {
+  scan_upload:true, scan_edit:true, scan_save:true,
+  stu_view:true, stu_add:false, stu_edit:false, stu_delete:false, stu_status:false,
+  cal_view:true,
+  pay_view:false, pay_edit:false,
+  hist_view:true, hist_edit:false, hist_delete:false,
+  rpt_view:true, rpt_print:true,
+  drive_view:true, drive_report:true,
+};
+
+let editPermsObj = {};
+
+function openEditPerm(uid, name, perms){
+  editUid = uid;
+  // 기존 권한과 기본값 병합
+  editPermsObj = Object.assign({}, DEFAULT_PERMS, perms || {});
+  el('perm-title').textContent = name + ' 권한 편집';
+  renderPermTable();
+  el('modal-perm').classList.add('show');
+}
+
+function renderPermTable(){
+  const wrap = el('perm-table-wrap');
+  let html2 = '<table class="perm-table"><thead><tr><th>항목</th><th>열람</th><th>등록/수정</th></tr></thead><tbody>';
+  PERM_STRUCTURE.forEach(sec => {
+    html2 += `<tr><td colspan="3" class="perm-section">${sec.section}</td></tr>`;
+    sec.items.forEach(item => {
+      // 열람 항목인지 등록/수정 항목인지 분류
+      const isViewOnly = item.key.endsWith('_view') || item.key.endsWith('_print');
+      const isEditOnly = item.key.endsWith('_add') || item.key.endsWith('_edit') ||
+                         item.key.endsWith('_delete') || item.key.endsWith('_save') ||
+                         item.key.endsWith('_upload') || item.key.endsWith('_status') ||
+                         item.key.endsWith('_report');
+      const val = editPermsObj[item.key] !== undefined ? editPermsObj[item.key] : false;
+      const tog = `<button class="perm-toggle ${val?'on':'off'}" onclick="togglePermItem('${item.key}',this)"></button>`;
+      html2 += `<tr>
+        <td style="font-size:.78rem;font-weight:600;">${item.label}</td>
+        <td><div class="perm-cell">${isViewOnly ? tog : (isEditOnly ? '-' : tog)}</div></td>
+        <td><div class="perm-cell">${isEditOnly ? tog : (isViewOnly ? '-' : '')}</div></td>
+      </tr>`;
+    });
+  });
+  html2 += '</tbody></table>';
+  wrap.innerHTML = html2;
+}
+
+function togglePermItem(key, btn){
+  editPermsObj[key] = !editPermsObj[key];
+  btn.className = `perm-toggle ${editPermsObj[key] ? 'on' : 'off'}`;
+}
+
+async function savePerms(){
+  showOv('권한 저장 중…');
+  try{
+    const permsToSave = {...editPermsObj};
+    if(FB_READY&&db){
+      await db.collection('users').doc(editUid).update({perms: permsToSave});
+    } else {
+      const u = JSON.parse(localStorage.getItem('sa_demo_users')||'[]');
+      const t = u.find(x=>x.uid===editUid);
+      if(t) t.perms = permsToSave;
+      localStorage.setItem('sa_demo_users', JSON.stringify(u));
+    }
+    toast('✅ 권한 저장 완료');
+    closeM('modal-perm');
+    loadTeachers();
+  } catch(e){ toast('오류: '+e.message); }
+  hideOv();
+}
+
+// 권한 체크 함수
+function hasPerm(key){
+  if(!CP) return false;
+  if(CP.role === 'admin') return true; // 관리자는 모든 권한
+  const perms = CP.perms || {};
+  // 구버전 호환
+  if(key === 'scan_upload' || key === 'scan_save') return perms.input !== false;
+  if(key === 'rpt_view') return perms.report !== false || perms.view !== false;
+  if(key === 'hist_view') return perms.view !== false;
+  // 새 권한
+  return perms[key] === true;
 }
 
 // ════════════════════════════════════════════
@@ -2938,6 +3110,23 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 @keyframes spin{to{transform:rotate(360deg);}}
 .toast{position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:.55rem 1.1rem;border-radius:10px;font-size:.78rem;opacity:0;transition:all .3s;z-index:1000;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);border-left:4px solid var(--gold);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ══ 세부 권한 테이블 ══ */
+.perm-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:.5rem;}
+.perm-table th{background:var(--ink);color:#fff;padding:.4rem .5rem;font-size:.68rem;font-weight:600;text-align:center;}
+.perm-table th:first-child{text-align:left;border-radius:6px 0 0 0;}
+.perm-table th:last-child{border-radius:0 6px 0 0;}
+.perm-table td{padding:.45rem .5rem;border-bottom:1px solid var(--gold-light);vertical-align:middle;}
+.perm-table tr:last-child td{border-bottom:none;}
+.perm-table tr:hover td{background:var(--gold-pale);}
+.perm-section{font-size:.65rem;font-weight:800;color:var(--muted);letter-spacing:.1em;background:var(--gold-pale);padding:.3rem .5rem;border-bottom:1px solid var(--border);}
+.perm-toggle{width:36px;height:20px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;position:relative;flex-shrink:0;}
+.perm-toggle.on{background:var(--sage);}
+.perm-toggle.off{background:#ccc;}
+.perm-toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.perm-toggle.on::after{left:19px;}
+.perm-toggle.off::after{left:3px;}
+.perm-cell{display:flex;justify-content:center;}
 
 /* ══ 드라이브 갤러리 ══ */
 .drive-photo-card{position:relative;cursor:pointer;border-radius:8px;overflow:hidden;transition:transform .15s;}
