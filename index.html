@@ -679,6 +679,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   <div class="tabs">
     <button class="tab on" onclick="aTab('teachers',this)">👩‍🏫 선생님</button>
     <button class="tab" onclick="aTab('monitor',this)">📡 현황</button>
+    <button class="tab" onclick="aTab('salary',this)">💵 급여</button>
     <button class="tab" onclick="aTab('config',this)">⚙️ 설정</button>
   </div>
   <div id="at-teachers">
@@ -692,19 +693,205 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
     </div>
     <div class="card"><div class="ctitle">선생님별 이달 입력 현황</div><div id="teacher-activity"></div></div>
   </div>
+  <!-- 급여 관리 탭 -->
+  <div id="at-salary" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;">
+      <div>
+        <select id="salary-stu-sel" class="inp" style="width:140px;" onchange="loadSalaryInfo()">
+          <option value="">-- 선생님 선택 --</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:.4rem;">
+        <select id="salary-year" class="inp" style="width:80px;" onchange="calcSalary()"></select>
+        <select id="salary-month" class="inp" style="width:70px;" onchange="calcSalary()">
+          <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+          <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+          <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+          <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 신상명세 카드 -->
+    <div class="card" id="salary-profile-card" style="display:none;">
+      <div class="ctitle" style="display:flex;justify-content:space-between;">
+        <span>👤 직원 신상명세</span>
+        <button class="btn btn-gold btn-sm" onclick="toggleSalaryProfile()">수정</button>
+      </div>
+      <div id="salary-profile-view"></div>
+      <div id="salary-profile-edit" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">
+          <div class="fg"><label>생년월일</label><input type="date" id="sp-birth" class="inp"></div>
+          <div class="fg"><label>성별</label>
+            <select id="sp-gender" class="inp"><option value="">선택</option><option value="남">남</option><option value="여">여</option></select>
+          </div>
+          <div class="fg"><label>최종학력</label><input type="text" id="sp-edu" class="inp" placeholder="○○대학교 미술학과"></div>
+          <div class="fg"><label>전공</label><input type="text" id="sp-major" class="inp" placeholder="서양화"></div>
+        </div>
+        <div class="fg"><label>주소</label><input type="text" id="sp-addr" class="inp" placeholder="대구시 ○○구 ○○동"></div>
+        <div class="fg"><label>연락처</label><input type="tel" id="sp-phone" class="inp" placeholder="010-0000-0000"></div>
+        <div class="fg"><label>경력사항</label><textarea id="sp-career" class="inp" rows="2" placeholder="이전 직장, 경력 등"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+          <div class="fg"><label>입사일</label><input type="date" id="sp-join" class="inp"></div>
+          <div class="fg"><label>계좌번호</label><input type="text" id="sp-bank" class="inp" placeholder="은행명 000-000-000"></div>
+        </div>
+        <div class="fg"><label>📷 이력서 이미지 업로드 (자동 정보 추출)</label>
+          <div style="border:2px dashed var(--border);border-radius:8px;padding:.8rem;text-align:center;cursor:pointer;background:var(--gold-pale);" onclick="document.getElementById('sp-resume-img').click()">
+            <div style="font-size:1.5rem;">📄</div>
+            <div style="font-size:.75rem;color:var(--muted);">이력서 사진을 업로드하면 정보를 자동 추출해요</div>
+            <input type="file" id="sp-resume-img" accept="image/*" style="display:none;" onchange="extractResume(event)">
+          </div>
+        </div>
+        <button class="btn btn-b btn-sm" style="width:100%;margin-top:.3rem;" onclick="saveSalaryProfile()">신상명세 저장</button>
+      </div>
+    </div>
+
+    <!-- 급여 계산 카드 -->
+    <div class="card" id="salary-calc-card" style="display:none;">
+      <div class="ctitle">💵 급여 계산</div>
+
+      <!-- 기본급 -->
+      <div style="background:var(--gold-pale);border-radius:10px;padding:.8rem;margin-bottom:.7rem;border:1.5px solid var(--border);">
+        <div style="font-size:.72rem;font-weight:800;color:var(--muted);margin-bottom:.6rem;">기본 근무 정보</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+          <div class="fg"><label>시급 (원)</label><input type="number" id="sal-hourly" class="inp" placeholder="10030" oninput="calcSalary()"></div>
+          <div class="fg"><label>일 근무시간</label><input type="number" id="sal-hours" class="inp" placeholder="8" oninput="calcSalary()"></div>
+          <div class="fg"><label>월 근무일수</label><input type="number" id="sal-days" class="inp" placeholder="22" oninput="calcSalary()"></div>
+          <div class="fg"><label>기본급 (자동계산)</label>
+            <div id="sal-base-result" style="padding:.46rem .62rem;background:#fff;border:2px solid var(--gold);border-radius:8px;font-weight:800;color:var(--blue);font-size:.85rem;">0원</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 추가 수당 -->
+      <div style="background:#fff;border-radius:10px;padding:.8rem;margin-bottom:.7rem;border:1.5px solid var(--border);">
+        <div style="font-size:.72rem;font-weight:800;color:var(--muted);margin-bottom:.6rem;">추가 수당</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+          <div class="fg"><label>추가근무일수</label><input type="number" id="sal-extra-days" class="inp" placeholder="0" oninput="calcSalary()"></div>
+          <div class="fg"><label>추가근무시간/일</label><input type="number" id="sal-extra-hours" class="inp" placeholder="0" oninput="calcSalary()"></div>
+          <div class="fg"><label>상여금 (원)</label><input type="number" id="sal-bonus" class="inp" placeholder="0" oninput="calcSalary()"></div>
+          <div class="fg"><label>연차수당 (일)</label><input type="number" id="sal-annual" class="inp" placeholder="0" oninput="calcSalary()"></div>
+        </div>
+      </div>
+
+      <!-- 휴직/퇴사 -->
+      <div style="background:#fff;border-radius:10px;padding:.8rem;margin-bottom:.7rem;border:1.5px solid var(--border);">
+        <div style="font-size:.72rem;font-weight:800;color:var(--muted);margin-bottom:.6rem;">특이사항</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+          <div class="fg"><label>휴직일수 (차감)</label><input type="number" id="sal-leave" class="inp" placeholder="0" oninput="calcSalary()"></div>
+          <div class="fg"><label>결근일수 (차감)</label><input type="number" id="sal-absent" class="inp" placeholder="0" oninput="calcSalary()"></div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:.3rem;">
+          <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem;cursor:pointer;">
+            <input type="checkbox" id="sal-resign" onchange="calcSalary()"> 퇴사 처리
+          </label>
+          <div class="fg" style="flex:1;margin:0;" id="sal-resign-date-wrap" style="display:none;">
+            <input type="date" id="sal-resign-date" class="inp" onchange="calcSalary()">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4대보험 -->
+      <div style="background:#fff;border-radius:10px;padding:.8rem;margin-bottom:.7rem;border:1.5px solid var(--border);">
+        <div style="font-size:.72rem;font-weight:800;color:var(--muted);margin-bottom:.4rem;">4대보험 공제</div>
+        <div style="font-size:.68rem;color:var(--muted);margin-bottom:.6rem;">2024년 기준 요율 자동 적용 (수동 수정 가능)</div>
+        <table style="width:100%;font-size:.74rem;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--ink);color:#fff;">
+              <th style="padding:.35rem .5rem;text-align:left;border-radius:6px 0 0 0;">항목</th>
+              <th style="padding:.35rem .5rem;text-align:center;">근로자 부담(%)</th>
+              <th style="padding:.35rem .5rem;text-align:center;">사용자 부담(%)</th>
+              <th style="padding:.35rem .5rem;text-align:right;border-radius:0 6px 0 0;">공제액</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--gold-light);">
+              <td style="padding:.35rem .5rem;">국민연금</td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-pension-ee" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="4.5" step="0.1" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-pension-er" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="4.5" step="0.1" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:right;font-weight:700;" id="ins-pension-amt">0원</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--gold-light);">
+              <td style="padding:.35rem .5rem;">건강보험</td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-health-ee" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="3.545" step="0.001" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-health-er" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="3.545" step="0.001" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:right;font-weight:700;" id="ins-health-amt">0원</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--gold-light);">
+              <td style="padding:.35rem .5rem;">장기요양</td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-care-ee" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="0.4591" step="0.001" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-care-er" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="0.4591" step="0.001" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:right;font-weight:700;" id="ins-care-amt">0원</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--gold-light);">
+              <td style="padding:.35rem .5rem;">고용보험</td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-employ-ee" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="0.9" step="0.1" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-employ-er" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="1.15" step="0.01" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:right;font-weight:700;" id="ins-employ-amt">0원</td>
+            </tr>
+            <tr>
+              <td style="padding:.35rem .5rem;">산재보험</td>
+              <td style="padding:.35rem .5rem;text-align:center;color:var(--muted);">-</td>
+              <td style="padding:.35rem .5rem;text-align:center;"><input type="number" id="ins-indus-er" class="inp" style="width:60px;text-align:center;padding:.2rem;" value="0.6" step="0.1" oninput="calcSalary()"></td>
+              <td style="padding:.35rem .5rem;text-align:right;font-weight:700;" id="ins-indus-amt">0원</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 급여 최종 계산 결과 -->
+      <div style="background:var(--ink);border-radius:12px;padding:1rem;color:#fff;">
+        <div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-bottom:.8rem;letter-spacing:.08em;">💵 최종 급여 명세</div>
+        <div id="sal-summary">
+          <div style="text-align:center;color:rgba(255,255,255,.4);font-size:.8rem;padding:1rem;">시급과 근무일수를 입력하세요</div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:.8rem;">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="saveSalaryRecord()">💾 급여 기록 저장</button>
+          <button class="btn btn-o btn-sm" style="flex:1;color:#fff;border-color:rgba(255,255,255,.3);" onclick="window.print()">🖨️ 급여명세서 출력</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 급여 이력 -->
+    <div class="card" id="salary-history-card" style="display:none;">
+      <div class="ctitle">📋 급여 지급 이력</div>
+      <div id="salary-history-list"></div>
+    </div>
+  </div>
+
   <div id="at-config" style="display:none;">
     <div class="card"><div class="ctitle">학원 정보</div>
       <div class="fg"><label>학원명</label><input type="text" id="cfg-nm" class="inp"></div>
       <div class="fg"><label>전화번호</label><input type="text" id="cfg-ph" class="inp" placeholder="053-000-0000"></div>
-      <div style="background:var(--pale);border-radius:8px;padding:.8rem;margin-bottom:.5rem;">
-        <div style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">수강료 기준표</div>
-        <table class="tbl" style="font-size:.72rem;">
-          <tr><td>주 1회</td><td style="font-weight:700;color:var(--blue);">110,000원/월</td></tr>
-          <tr><td>주 2회</td><td style="font-weight:700;color:var(--blue);">130,000원/월</td></tr>
-          <tr><td>주 3회</td><td style="font-weight:700;color:var(--blue);">150,000원/월</td></tr>
-          <tr><td>취미반 주 3회</td><td style="font-weight:700;color:var(--blue);">160,000원/월</td></tr>
-          <tr><td>형제 할인</td><td style="font-weight:700;color:var(--accent);">-5,000원/명</td></tr>
-        </table>
+      <div style="margin-bottom:.8rem;">
+        <div style="font-size:.75rem;font-weight:800;color:var(--ink);margin-bottom:.6rem;">💰 수강료 기준표 (직접 수정 가능)</div>
+        <div style="display:grid;gap:.5rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <label style="font-size:.75rem;min-width:90px;color:var(--muted);">주 1회</label>
+            <input type="number" id="fee-w1" class="inp" style="flex:1;" placeholder="110000">
+            <span style="font-size:.72rem;color:var(--muted);">원/월</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <label style="font-size:.75rem;min-width:90px;color:var(--muted);">주 2회</label>
+            <input type="number" id="fee-w2" class="inp" style="flex:1;" placeholder="130000">
+            <span style="font-size:.72rem;color:var(--muted);">원/월</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <label style="font-size:.75rem;min-width:90px;color:var(--muted);">주 3회</label>
+            <input type="number" id="fee-w3" class="inp" style="flex:1;" placeholder="150000">
+            <span style="font-size:.72rem;color:var(--muted);">원/월</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <label style="font-size:.75rem;min-width:90px;color:var(--muted);">취미반 주 3회</label>
+            <input type="number" id="fee-hobby" class="inp" style="flex:1;" placeholder="160000">
+            <span style="font-size:.72rem;color:var(--muted);">원/월</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;padding-top:.3rem;border-top:1px solid var(--gold-light);">
+            <label style="font-size:.75rem;min-width:90px;color:var(--accent);">형제 할인/명</label>
+            <input type="number" id="fee-sibling" class="inp" style="flex:1;" placeholder="5000">
+            <span style="font-size:.72rem;color:var(--muted);">원 할인</span>
+          </div>
+        </div>
       </div>
       <button class="btn btn-p btn-sm" onclick="saveCfg()">저장</button>
     </div>
@@ -1725,7 +1912,12 @@ function deleteMgmt(createdAt){
 // ════════════════════════════════════════════
 //  수강료 계산
 // ════════════════════════════════════════════
-const FEE_TABLE = {'1':110000,'2':130000,'3':150000,'hobby':160000};
+const FEE_TABLE = {
+  '1': CFG.feeW1||110000,
+  '2': CFG.feeW2||130000,
+  '3': CFG.feeW3||150000,
+  'hobby': CFG.feeHobby||160000
+};
 const FEE_LABELS = {'1':'주 1회','2':'주 2회','3':'주 3회','hobby':'취미반 주 3회'};
 
 function calcFee(){
@@ -2157,13 +2349,7 @@ async function sendResetEmail(){
   else toast('✅ 재설정 메일 발송 (데모)');closeM('modal-reset');}
   catch(e){toast('오류: '+e.message);}hideOv();
 }
-function openEditPerm(uid,name,perms){
-  editUid=uid;const base={input:true,view:true,report:false};newPerms=Object.assign({},base,perms||{});
-  el('perm-title').textContent=`${name} 권한 편집`;
-  ['input','view','report'].forEach(p=>{const b=el('ep-'+p);if(b)b.className='perm-btn'+(newPerms[p]?' on':'');});
-  el('modal-perm').classList.add('show');
-}
-function tEP(p){newPerms[p]=!newPerms[p];['input','view','report'].forEach(k=>{const b=el('ep-'+k);if(b)b.className='perm-btn'+(newPerms[k]?' on':'');});}
+// 구버전 권한 함수 제거됨 (신버전 openEditPerm 사용)
 async function savePerms(){
   showOv('권한 저장 중…');
   try{if(FB_READY&&db)await db.collection('users').doc(editUid).update({perms:newPerms});
@@ -2200,10 +2386,20 @@ function loadMonitor(){
 }
 function aTab(id,btn){
   document.querySelectorAll('#page-admin .tab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');
-  ['teachers','monitor','config'].forEach(t=>el('at-'+t).style.display='none');el('at-'+id).style.display='block';
+  ['teachers','monitor','salary','config'].forEach(t=>el('at-'+t).style.display='none');el('at-'+id).style.display='block';
   if(id==='teachers')loadTeachers();
   if(id==='monitor'){sv('mon-date',today());loadMonitor();}
-  if(id==='config'){el('su-input').value=SU;el('cfg-nm').value=CFG.name||'솔브아트';el('cfg-ph').value=CFG.phone||'';el('cfg-fee').value=CFG.fee||'';}
+  if(id==='salary'){loadSalaryTeachers();}
+  if(id==='config'){
+    el('su-input').value=SU;
+    el('cfg-nm').value=CFG.name||'솔브아트';
+    el('cfg-ph').value=CFG.phone||'';
+    if(el('fee-w1'))el('fee-w1').value=CFG.feeW1||110000;
+    if(el('fee-w2'))el('fee-w2').value=CFG.feeW2||130000;
+    if(el('fee-w3'))el('fee-w3').value=CFG.feeW3||150000;
+    if(el('fee-hobby'))el('fee-hobby').value=CFG.feeHobby||160000;
+    if(el('fee-sibling'))el('fee-sibling').value=CFG.feeSibling||5000;
+  }
 }
 
 // ════════════════════════════════════════════
@@ -2240,7 +2436,22 @@ async function changePw(){
 // ════════════════════════════════════════════
 //  설정
 // ════════════════════════════════════════════
-function saveCfg(){CFG={name:gv('cfg-nm'),phone:gv('cfg-ph'),fee:gv('cfg-fee')};localStorage.setItem('sa_cfg',JSON.stringify(CFG));toast('✅ 설정 저장');}
+function saveCfg(){
+  CFG={
+    name:gv('cfg-nm'),phone:gv('cfg-ph'),
+    feeW1:parseInt(el('fee-w1')?.value||110000),
+    feeW2:parseInt(el('fee-w2')?.value||130000),
+    feeW3:parseInt(el('fee-w3')?.value||150000),
+    feeHobby:parseInt(el('fee-hobby')?.value||160000),
+    feeSibling:parseInt(el('fee-sibling')?.value||5000),
+  };
+  localStorage.setItem('sa_cfg',JSON.stringify(CFG));
+  // FEE_TABLE 동적 업데이트
+  FEE_TABLE['1']=CFG.feeW1;FEE_TABLE['2']=CFG.feeW2;
+  FEE_TABLE['3']=CFG.feeW3;FEE_TABLE['hobby']=CFG.feeHobby;
+  if(FB_READY&&db){db.collection('config').doc('fees').set(CFG).catch(e=>{});}
+  toast('✅ 설정 저장 완료');
+}
 function saveURL(){SU=el('su-input').value.trim();localStorage.setItem('sa_url',SU);toast('✅ URL 저장');}
 async function testConn(){if(!SU){toast('⚠️ URL 미입력');return;}try{const r=await fetch(SU);const d=await r.json();toast(d.status==='ok'?'✅ 연결 성공!':'⚠️ 응답 이상');}catch{toast('❌ 연결 실패');}}
 
@@ -2546,6 +2757,283 @@ function openStatDetail(type){
   modal.classList.add('show');
 }
 
+
+
+// ════════════════════════════════════════════
+//  급여 관리
+// ════════════════════════════════════════════
+let currentSalaryUid = '';
+let salaryProfileData = {};
+
+function loadSalaryTeachers(){
+  const sel = el('salary-stu-sel');
+  if(!sel) return;
+  // Firestore에서 선생님 목록 로드
+  if(FB_READY&&db){
+    db.collection('users').get().then(snap=>{
+      sel.innerHTML='<option value="">-- 선생님 선택 --</option>';
+      snap.forEach(doc=>{
+        const d=doc.data();
+        if(d.role!=='admin'){
+          sel.innerHTML+=`<option value="${doc.id}">${d.name||d.email}</option>`;
+        }
+      });
+    });
+  }
+  // 연도 셀렉트
+  const yrSel=el('salary-year');
+  if(yrSel&&!yrSel.options.length){
+    const now=new Date().getFullYear();
+    for(let y=now-1;y<=now+1;y++)yrSel.innerHTML+=`<option value="${y}" ${y===now?'selected':''}>${y}년</option>`;
+  }
+  // 현재 월 기본 선택
+  const mSel=el('salary-month');
+  if(mSel) mSel.value=new Date().getMonth()+1;
+}
+
+function loadSalaryInfo(){
+  currentSalaryUid=gv('salary-stu-sel');
+  if(!currentSalaryUid){
+    el('salary-profile-card').style.display='none';
+    el('salary-calc-card').style.display='none';
+    el('salary-history-card').style.display='none';
+    return;
+  }
+  el('salary-profile-card').style.display='block';
+  el('salary-calc-card').style.display='block';
+  el('salary-history-card').style.display='block';
+
+  // 신상명세 로드
+  const key='salary_profile_'+currentSalaryUid;
+  salaryProfileData=JSON.parse(localStorage.getItem(key)||'{}');
+  renderSalaryProfile();
+
+  // 급여 기록 로드
+  loadSalaryHistory();
+
+  // 최저임금 기본값
+  if(!el('sal-hourly').value) el('sal-hourly').value=10030;
+  if(!el('sal-hours').value) el('sal-hours').value=8;
+  if(!el('sal-days').value) el('sal-days').value=22;
+  calcSalary();
+}
+
+function renderSalaryProfile(){
+  const d=salaryProfileData;
+  const view=el('salary-profile-view');
+  if(!view)return;
+  if(Object.keys(d).length===0){
+    view.innerHTML='<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">신상명세를 등록하세요</div>';
+    return;
+  }
+  // 근속 연수 계산
+  let tenure='';
+  if(d.joinDate){
+    const ms=new Date()-new Date(d.joinDate);
+    const years=Math.floor(ms/1000/60/60/24/365);
+    const months=Math.floor((ms/1000/60/60/24%365)/30);
+    tenure=`${years}년 ${months}개월`;
+  }
+  view.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;font-size:.76rem;">
+      ${d.birth?`<div><span style="color:var(--muted);">생년월일</span><br><strong>${d.birth}</strong></div>`:''}
+      ${d.gender?`<div><span style="color:var(--muted);">성별</span><br><strong>${d.gender}</strong></div>`:''}
+      ${d.edu?`<div><span style="color:var(--muted);">학력</span><br><strong>${d.edu}</strong></div>`:''}
+      ${d.major?`<div><span style="color:var(--muted);">전공</span><br><strong>${d.major}</strong></div>`:''}
+      ${d.phone?`<div><span style="color:var(--muted);">연락처</span><br><strong>${d.phone}</strong></div>`:''}
+      ${d.joinDate?`<div><span style="color:var(--muted);">입사일</span><br><strong>${d.joinDate}</strong><br><span style="color:var(--blue);font-size:.68rem;">근속 ${tenure}</span></div>`:''}
+      ${d.bank?`<div><span style="color:var(--muted);">계좌</span><br><strong>${d.bank}</strong></div>`:''}
+    </div>
+    ${d.addr?`<div style="margin-top:.4rem;font-size:.74rem;"><span style="color:var(--muted);">주소</span><br>${d.addr}</div>`:''}
+    ${d.career?`<div style="margin-top:.4rem;font-size:.74rem;"><span style="color:var(--muted);">경력</span><br>${d.career}</div>`:''}`;
+}
+
+function toggleSalaryProfile(){
+  const edit=el('salary-profile-edit');
+  const isOpen=edit.style.display!=='none';
+  if(!isOpen){
+    // 편집 모드 열기
+    const d=salaryProfileData;
+    sv('sp-birth',d.birth||'');sv('sp-gender',d.gender||'');
+    sv('sp-edu',d.edu||'');sv('sp-major',d.major||'');
+    sv('sp-addr',d.addr||'');sv('sp-phone',d.phone||'');
+    sv('sp-career',d.career||'');sv('sp-join',d.joinDate||'');
+    sv('sp-bank',d.bank||'');
+    edit.style.display='block';
+  } else {
+    edit.style.display='none';
+  }
+}
+
+function saveSalaryProfile(){
+  salaryProfileData={
+    birth:gv('sp-birth'),gender:gv('sp-gender'),
+    edu:gv('sp-edu'),major:gv('sp-major'),
+    addr:gv('sp-addr'),phone:gv('sp-phone'),
+    career:gv('sp-career'),joinDate:gv('sp-join'),
+    bank:gv('sp-bank'),updatedAt:new Date().toISOString()
+  };
+  const key='salary_profile_'+currentSalaryUid;
+  localStorage.setItem(key,JSON.stringify(salaryProfileData));
+  if(FB_READY&&db){
+    db.collection('users').doc(currentSalaryUid).update({profile:salaryProfileData}).catch(e=>{});
+  }
+  renderSalaryProfile();
+  el('salary-profile-edit').style.display='none';
+  toast('✅ 신상명세 저장 완료');
+}
+
+// 이력서 이미지 OCR (데모 - 실제는 AI 연동 필요)
+function extractResume(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  toast('📄 이력서 분석 중... (기능 준비 중)');
+  // 실제 구현 시 Google Vision API 또는 Tesseract.js 사용
+}
+
+function calcSalary(){
+  const hourly=parseFloat(el('sal-hourly')?.value||0);
+  const hours=parseFloat(el('sal-hours')?.value||0);
+  const days=parseFloat(el('sal-days')?.value||0);
+  const extraDays=parseFloat(el('sal-extra-days')?.value||0);
+  const extraHours=parseFloat(el('sal-extra-hours')?.value||0);
+  const bonus=parseFloat(el('sal-bonus')?.value||0);
+  const annualDays=parseFloat(el('sal-annual')?.value||0);
+  const leaveDays=parseFloat(el('sal-leave')?.value||0);
+  const absentDays=parseFloat(el('sal-absent')?.value||0);
+
+  if(!hourly||!hours||!days){
+    if(el('sal-base-result'))el('sal-base-result').textContent='0원';
+    return;
+  }
+
+  // 기본급 계산
+  const actualDays=days-leaveDays-absentDays;
+  const basePay=Math.round(hourly*hours*actualDays);
+
+  // 추가근무수당 (1.5배)
+  const extraPay=Math.round(hourly*1.5*extraHours*extraDays);
+
+  // 연차수당
+  const annualPay=Math.round(hourly*hours*annualDays);
+
+  // 총 지급액
+  const totalGross=basePay+extraPay+bonus+annualPay;
+
+  if(el('sal-base-result'))el('sal-base-result').textContent=basePay.toLocaleString()+'원';
+
+  // 4대보험 계산
+  const getRate=(id)=>parseFloat(el(id)?.value||0)/100;
+  const insItems=[
+    {name:'국민연금',ee:'ins-pension-ee',er:'ins-pension-er',amtId:'ins-pension-amt'},
+    {name:'건강보험',ee:'ins-health-ee',er:'ins-health-er',amtId:'ins-health-amt'},
+    {name:'장기요양',ee:'ins-care-ee',er:'ins-care-er',amtId:'ins-care-amt'},
+    {name:'고용보험',ee:'ins-employ-ee',er:'ins-employ-er',amtId:'ins-employ-amt'},
+    {name:'산재보험',ee:null,er:'ins-indus-er',amtId:'ins-indus-amt'},
+  ];
+
+  let totalEE=0,totalER=0;
+  insItems.forEach(ins=>{
+    const eeRate=ins.ee?getRate(ins.ee):0;
+    const erRate=getRate(ins.er);
+    const eeAmt=Math.round(totalGross*eeRate);
+    const erAmt=Math.round(totalGross*erRate);
+    totalEE+=eeAmt;totalER+=erAmt;
+    if(el(ins.amtId))el(ins.amtId).textContent=(eeAmt+erAmt).toLocaleString()+'원';
+  });
+
+  // 퇴사 처리 시 일할계산
+  let finalPay=totalGross-totalEE;
+  const resignCheck=el('sal-resign');
+  if(resignCheck?.checked){
+    el('sal-resign-date-wrap').style.display='flex';
+    const resignDate=gv('sal-resign-date');
+    if(resignDate){
+      const d=new Date(resignDate);
+      const yr=parseInt(gv('salary-year')||new Date().getFullYear());
+      const mo=parseInt(gv('salary-month')||new Date().getMonth()+1);
+      const daysInMonth=new Date(yr,mo,0).getDate();
+      const workedDays=d.getDate();
+      finalPay=Math.round(finalPay*(workedDays/daysInMonth));
+    }
+  } else {
+    if(el('sal-resign-date-wrap'))el('sal-resign-date-wrap').style.display='none';
+  }
+
+  // 결과 표시
+  const summary=el('sal-summary');
+  if(!summary)return;
+  summary.innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:.4rem;">
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.1);">
+        <span style="color:rgba(255,255,255,.7);">기본급</span><span style="font-weight:700;">${basePay.toLocaleString()}원</span>
+      </div>
+      ${extraPay?`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.1);">
+        <span style="color:rgba(255,255,255,.7);">초과근무수당</span><span style="font-weight:700;">+${extraPay.toLocaleString()}원</span>
+      </div>`:''}
+      ${bonus?`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.1);">
+        <span style="color:rgba(255,255,255,.7);">상여금</span><span style="font-weight:700;">+${bonus.toLocaleString()}원</span>
+      </div>`:''}
+      ${annualPay?`<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.1);">
+        <span style="color:rgba(255,255,255,.7);">연차수당</span><span style="font-weight:700;">+${annualPay.toLocaleString()}원</span>
+      </div>`:''}
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.15);">
+        <span style="color:rgba(255,255,255,.7);">총 지급액</span><span style="font-weight:800;color:var(--gold);">${totalGross.toLocaleString()}원</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.1);">
+        <span style="color:rgba(255,255,255,.7);">4대보험 공제 (근로자)</span><span style="color:#ff8a80;font-weight:700;">-${totalEE.toLocaleString()}원</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.1);">
+        <span style="color:rgba(255,255,255,.7);">사용자 부담 4대보험</span><span style="color:#80cbc4;font-weight:700;">${totalER.toLocaleString()}원</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:1rem;padding:.5rem 0;margin-top:.2rem;border-top:2px solid rgba(255,200,0,.4);">
+        <span style="font-weight:800;color:var(--gold);">💵 실수령액</span>
+        <span style="font-size:1.3rem;font-weight:900;color:var(--gold);">${finalPay.toLocaleString()}원</span>
+      </div>
+    </div>`;
+}
+
+function saveSalaryRecord(){
+  if(!currentSalaryUid){toast('선생님을 선택하세요');return;}
+  const yr=gv('salary-year'),mo=gv('salary-month');
+  const key='salary_rec_'+currentSalaryUid+'_'+yr+'_'+mo;
+  const record={
+    uid:currentSalaryUid,year:yr,month:mo,
+    hourly:gv('sal-hourly'),hours:gv('sal-hours'),days:gv('sal-days'),
+    extraDays:gv('sal-extra-days'),extraHours:gv('sal-extra-hours'),
+    bonus:gv('sal-bonus'),annual:gv('sal-annual'),
+    leave:gv('sal-leave'),absent:gv('sal-absent'),
+    savedAt:new Date().toISOString()
+  };
+  localStorage.setItem(key,JSON.stringify(record));
+  if(FB_READY&&db){
+    db.collection('salaries').doc(key).set(record).catch(e=>{});
+  }
+  toast('✅ 급여 기록 저장 완료!');
+  loadSalaryHistory();
+}
+
+function loadSalaryHistory(){
+  const list=el('salary-history-list');
+  if(!list)return;
+  const prefix='salary_rec_'+currentSalaryUid+'_';
+  const records=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith(prefix)){
+      records.push(JSON.parse(localStorage.getItem(k)||'{}'));
+    }
+  }
+  records.sort((a,b)=>(b.year+b.month)>(a.year+a.month)?1:-1);
+  list.innerHTML=records.length?records.slice(0,6).map(r=>{
+    const base=Math.round((r.hourly||0)*(r.hours||0)*(r.days||0));
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px dotted var(--gold-light);font-size:.78rem;">
+      <span style="font-weight:700;">${r.year}년 ${r.month}월</span>
+      <span style="color:var(--muted);">시급 ${Number(r.hourly).toLocaleString()}원 · ${r.days}일</span>
+      <span style="font-weight:800;color:var(--blue);">${base.toLocaleString()}원~</span>
+    </div>`;
+  }).join(''):'<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">급여 기록이 없어요</div>';
+}
 
 // ════════════════════════════════════════════
 //  세부 권한 관리
