@@ -59,7 +59,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;min-width:0;display:flex;flex-direction:column;align-items:center;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;display:flex;flex-direction:column;align-items:center;width:100%;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -71,7 +71,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;box-sizing:border-box;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -240,7 +240,8 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:fadeIn .2s ease;border-top:4px solid var(--gold);}
 .modal h3{font-size:1rem;font-weight:900;margin-bottom:.95rem;}
 .modal-footer{display:flex;gap:.45rem;margin-top:.95rem;justify-content:flex-end;}
-.tcard{background:#fff;border:2px solid var(--gold-light);border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.8rem;box-shadow:var(--shadow);}
+.tcard{background:#fff;border:2px solid var(--gold-light);border-radius:12px 12px 0 0;padding:.85rem 1rem;margin-bottom:0;display:flex;align-items:center;gap:.8rem;box-shadow:var(--shadow);}
+.tcard-wrap{margin-bottom:.65rem;box-shadow:var(--shadow);border-radius:12px;overflow:hidden;}
 .tavatar{width:42px;height:42px;border-radius:50%;background:var(--gold);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;flex-shrink:0;border:2px solid var(--ink);}
 .tavatar.admin{background:var(--blue);color:#fff;border-color:var(--blue);}
 .tinfo h4{font-size:.88rem;font-weight:800;margin-bottom:.13rem;}
@@ -365,8 +366,8 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   #sidebar{display:flex;}
   .bnav{display:none !important;}
   .app-body{justify-content:flex-start;}
-  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;}
-  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;width:100%;}
+  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+  .page{padding:1.5rem 2rem;max-width:720px;margin:0 auto;width:100%;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
@@ -2597,27 +2598,44 @@ async function loadTeachers(){
     if(!list.length){wrap.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.78rem;">등록된 선생님이 없어요</div>';return;}
     wrap.innerHTML=list.map(t=>{
       const isA=t.role==='admin',isSelf=t.uid===CU?.uid;
-      return `<div class="tcard">
-        <div class="tavatar ${isA?'admin':''}">${(t.name||'?')[0]}</div>
-        <div class="tinfo"><h4>${t.name||'이름없음'} ${isSelf?'<span style="font-size:.62rem;color:var(--muted)">(나)</span>':''}</h4>
-          <p>${t.email||''}</p>
-          <p style="margin-top:.15rem;">
-            <span class="bdg ${isA?'b-admin':'bb'}">${isA?'관리자':'선생님'}</span>
-            ${t.perms?.scan_upload||t.perms?.input?'<span class="bdg bg" style="margin-left:2px">스캔</span>':''}
-            ${t.perms?.stu_view||t.perms?.view?'<span class="bdg bb" style="margin-left:2px">원생열람</span>':''}
-            ${t.perms?.stu_add?'<span class="bdg bg" style="margin-left:2px">원생등록</span>':''}
-            ${t.perms?.pay_view?'<span class="bdg bo" style="margin-left:2px">수강료</span>':''}
-            ${t.perms?.rpt_view||t.perms?.report?'<span class="bdg bb" style="margin-left:2px">보고서</span>':''}
-            ${t.perms?.hist_edit?'<span class="bdg bo" style="margin-left:2px">기록수정</span>':''}
-          </p></div>
-        <div class="tactions">
-          ${!isSelf?`
-          <button class="btn btn-o btn-sm" onclick="openEditPerm('${t.uid}','${t.name}',${JSON.stringify(t.perms||{})})">권한</button>
-          <button class="btn btn-o btn-sm" onclick="openReset('${t.uid}','${t.name}','${t.email||''}')">초기화</button>
-          <button class="btn btn-r btn-sm" onclick="delTeacher('${t.uid}','${t.name}')">삭제</button>
-          `:'<span style="font-size:.7rem;color:var(--muted)">본인</span>'}
-        </div></div>`;
+      const perms=t.perms||{};
+      return `<div class="tcard-wrap" id="tcard-${t.uid}">
+        <div class="tcard" style="border-radius:10px;margin-bottom:0;">
+          <div class="tavatar ${isA?'admin':''}">${(t.name||'?')[0]}</div>
+          <div class="tinfo">
+            <h4>${t.name||'이름없음'} ${isSelf?'<span style="font-size:.62rem;color:var(--muted)">(나)</span>':''}</h4>
+            <p>${t.email||''}</p>
+            <p style="margin-top:.15rem;">
+              <span class="bdg ${isA?'b-admin':'bb'}">${isA?'관리자':'선생님'}</span>
+            </p>
+          </div>
+          <div class="tactions">
+            ${!isSelf?`
+            <button class="btn btn-gold btn-sm" onclick="togglePermPanel('${t.uid}','${t.name}',${JSON.stringify(t.perms||{}).replace(/"/g,"'")})">권한 ▼</button>
+            <button class="btn btn-o btn-sm" onclick="openReset('${t.uid}','${t.name}','${t.email||''}')">초기화</button>
+            <button class="btn btn-r btn-sm" onclick="delTeacher('${t.uid}','${t.name}')">삭제</button>
+            `:'<span style="font-size:.7rem;color:var(--muted)">본인</span>'}
+          </div>
+        </div>
+        <!-- 권한 패널 (숨김) -->
+        <div class="perm-panel" id="ppanel-${t.uid}" style="display:none;border:2px solid var(--gold);border-top:none;border-radius:0 0 10px 10px;background:#fff;padding:.9rem;margin-bottom:.6rem;">
+          <div style="font-size:.72rem;font-weight:800;color:var(--muted);margin-bottom:.7rem;display:flex;justify-content:space-between;align-items:center;">
+            <span>🔑 ${t.name} 권한 설정</span>
+            <div style="display:flex;gap:.4rem;">
+              <button class="btn btn-o btn-sm" style="font-size:.68rem;" onclick="resetToDefaultPerms('${t.uid}')">기본값</button>
+              <button class="btn btn-g btn-sm" style="font-size:.68rem;" onclick="saveInlinePerms('${t.uid}')">✅ 저장</button>
+            </div>
+          </div>
+          <div id="perm-items-${t.uid}"></div>
+        </div>
+      </div>`;
     }).join('');
+    // 각 카드에 현재 권한 렌더링
+    list.forEach(t=>{
+      if(t.role!=='admin'&&t.uid!==CU?.uid){
+        renderPermItems(t.uid, t.perms||{});
+      }
+    });
   }catch(e){wrap.innerHTML=`<div style="color:var(--red);padding:1rem;font-size:.78rem;">오류: ${e.message}</div>`;}
 }
 let resetUid2='';
@@ -3903,6 +3921,90 @@ function loadSalaryHistory(){
   }).join(''):'<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.78rem;">급여 기록이 없어요</div>';
 }
 
+
+// ════════════════════════════════════════════
+//  인라인 권한 패널
+// ════════════════════════════════════════════
+let inlinePerms = {}; // uid -> perms 객체
+
+function renderPermItems(uid, perms){
+  const wrap = el('perm-items-'+uid);
+  if(!wrap) return;
+  // 현재 권한을 복사해서 편집용으로 저장
+  if(!inlinePerms[uid]) inlinePerms[uid] = Object.assign({}, DEFAULT_PERMS, perms);
+
+  let html2 = '';
+  PERM_STRUCTURE.forEach(sec => {
+    html2 += `<span class="perm-section-header">${sec.section}</span>`;
+    html2 += `<div class="perm-row"><span class="perm-row-label">세부 권한</span><div class="perm-row-btns">`;
+    sec.items.forEach(item => {
+      const isOn = inlinePerms[uid][item.key] === true;
+      html2 += `<button class="perm-btn ${isOn?'on':''}" id="pbtn-${uid}-${item.key}"
+        onclick="toggleInlinePerm('${uid}','${item.key}',this)">${item.label}</button>`;
+    });
+    html2 += `</div></div>`;
+  });
+  wrap.innerHTML = html2;
+}
+
+function toggleInlinePerm(uid, key, btn){
+  if(!inlinePerms[uid]) inlinePerms[uid] = Object.assign({}, DEFAULT_PERMS);
+  inlinePerms[uid][key] = !inlinePerms[uid][key];
+  btn.className = `perm-btn ${inlinePerms[uid][key] ? 'on' : ''}`;
+}
+
+function togglePermPanel(uid, name, permsStr){
+  const panel = el('ppanel-'+uid);
+  const btn = panel?.previousElementSibling?.querySelector('.btn-gold');
+  if(!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  // 모든 패널 닫기
+  document.querySelectorAll('.perm-panel').forEach(p => {
+    p.style.display = 'none';
+    const prevBtn = p.previousElementSibling?.querySelector('.btn-gold');
+    if(prevBtn) prevBtn.textContent = '권한 ▼';
+  });
+  if(!isOpen){
+    // 열기
+    let perms = {};
+    try{ perms = typeof permsStr === 'string' ? JSON.parse(permsStr.replace(/'/g,'"')) : permsStr; }catch(e){ perms = {}; }
+    inlinePerms[uid] = Object.assign({}, DEFAULT_PERMS, perms);
+    renderPermItems(uid, inlinePerms[uid]);
+    panel.style.display = 'block';
+    if(btn) btn.textContent = '권한 ▲';
+    // 스크롤
+    setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+  }
+}
+
+async function saveInlinePerms(uid){
+  const perms = inlinePerms[uid];
+  if(!perms){ toast('권한 정보 없음'); return; }
+  showOv('권한 저장 중…');
+  try{
+    if(FB_READY&&db){
+      await db.collection('users').doc(uid).update({perms});
+    } else {
+      const u = JSON.parse(localStorage.getItem('sa_demo_users')||'[]');
+      const t = u.find(x=>x.uid===uid);
+      if(t) t.perms = perms;
+      localStorage.setItem('sa_demo_users', JSON.stringify(u));
+    }
+    toast('✅ 권한 저장 완료!');
+    // 패널 닫기
+    const panel = el('ppanel-'+uid);
+    if(panel) panel.style.display = 'none';
+    loadTeachers();
+  }catch(e){ toast('오류: '+e.message); }
+  hideOv();
+}
+
+function resetToDefaultPerms(uid){
+  inlinePerms[uid] = Object.assign({}, DEFAULT_PERMS);
+  renderPermItems(uid, inlinePerms[uid]);
+  toast('기본값으로 초기화했어요. 저장 버튼을 눌러 적용하세요.');
+}
+
 // ════════════════════════════════════════════
 //  세부 권한 관리
 // ════════════════════════════════════════════
@@ -4201,7 +4303,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 #sidebar .sn-item .sic{font-size:1.1rem;width:20px;text-align:center;}
 
 /* ── 콘텐츠 영역 ── */
-.content-area{flex:1;overflow-x:hidden;min-width:0;display:flex;flex-direction:column;align-items:center;}
+.content-area{flex:1;overflow-x:hidden;min-width:0;display:flex;flex-direction:column;align-items:center;width:100%;}
 
 /* ── 바텀 네비 (모바일) ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--ink);border-top:2px solid rgba(255,200,0,.2);display:flex;z-index:300;height:var(--nav-h);}
@@ -4213,7 +4315,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;box-sizing:border-box;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -4382,7 +4484,8 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:fadeIn .2s ease;border-top:4px solid var(--gold);}
 .modal h3{font-size:1rem;font-weight:900;margin-bottom:.95rem;}
 .modal-footer{display:flex;gap:.45rem;margin-top:.95rem;justify-content:flex-end;}
-.tcard{background:#fff;border:2px solid var(--gold-light);border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.8rem;box-shadow:var(--shadow);}
+.tcard{background:#fff;border:2px solid var(--gold-light);border-radius:12px 12px 0 0;padding:.85rem 1rem;margin-bottom:0;display:flex;align-items:center;gap:.8rem;box-shadow:var(--shadow);}
+.tcard-wrap{margin-bottom:.65rem;box-shadow:var(--shadow);border-radius:12px;overflow:hidden;}
 .tavatar{width:42px;height:42px;border-radius:50%;background:var(--gold);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;flex-shrink:0;border:2px solid var(--ink);}
 .tavatar.admin{background:var(--blue);color:#fff;border-color:var(--blue);}
 .tinfo h4{font-size:.88rem;font-weight:800;margin-bottom:.13rem;}
@@ -4507,8 +4610,8 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   #sidebar{display:flex;}
   .bnav{display:none !important;}
   .app-body{justify-content:flex-start;}
-  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;}
-  .page{padding:1.5rem 2rem;max-width:860px;margin:0 auto;width:100%;}
+  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
+  .page{padding:1.5rem 2rem;max-width:720px;margin:0 auto;width:100%;}
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
