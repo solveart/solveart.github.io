@@ -395,7 +395,93 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .stu-photo-prev{width:72px;height:96px;border-radius:8px;border:2px solid var(--gold);background:#fff;object-fit:cover;display:none;flex-shrink:0;}
 .stu-photo-empty{width:72px;height:96px;border-radius:8px;border:2px solid var(--gold-light);background:#fff;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.72rem;font-weight:800;flex-shrink:0;}
 .stu-av.has-photo{background:#fff !important;border-color:var(--gold);overflow:hidden;}
-.stu-av.has-photo img{width:100%;height:100%;object-fit:cover;display:block;}</style>
+.stu-av.has-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+/* Codex mobile fit: compact controls for phone displays. */
+@media(max-width:600px){
+  :root{--nav-h:54px;--header-h:50px;}
+  body{font-size:14px;overflow-x:hidden;}
+  header{height:var(--header-h);padding:0 .75rem;}
+  .logo img{width:28px;height:28px;}
+  .logo-text{font-size:.82rem;}
+  .uchip{gap:.32rem;font-size:.68rem;}
+  .logout-btn{font-size:.64rem;padding:.22rem .46rem;}
+  .rbdg{font-size:.58rem;padding:.13rem .42rem;}
+
+  .page{width:100% !important;max-width:none !important;padding:.75rem .65rem calc(var(--nav-h) + 1rem) !important;}
+  .ptitle{font-size:1.08rem;line-height:1.25;margin-bottom:.15rem;}
+  .psub{font-size:.68rem;margin-bottom:.75rem;}
+  .card{border-radius:10px;padding:.8rem;margin-bottom:.7rem;}
+  .ctitle{font-size:.62rem;margin-bottom:.6rem;padding-bottom:.4rem;}
+
+  .dash-hello{border-radius:12px;padding:.9rem 1rem;gap:.6rem;align-items:flex-start;}
+  .dash-hello-title{font-size:.98rem;line-height:1.25;}
+  .dash-hello-sub{font-size:.7rem;}
+  .dash-date{font-size:.66rem;padding:.32rem .62rem;}
+  .dash-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;}
+  .dash-stat-card{padding:.72rem .75rem;gap:.55rem;min-height:86px;}
+  .dsc-icon{width:38px;height:38px;font-size:1.45rem;}
+  .dsc-val{font-size:1.42rem;}
+  .dsc-lbl{font-size:.68rem;line-height:1.25;}
+  .dsc-sub{font-size:.6rem;line-height:1.35;}
+
+  .tabs{border-radius:10px;padding:.24rem;gap:.22rem;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{min-width:82px;font-size:.66rem;padding:.42rem .28rem;white-space:normal;line-height:1.2;}
+
+  .fg{margin-bottom:.65rem;}
+  .fg label{font-size:.68rem;}
+  .fg input,.fg select,.fg textarea,.inp{font-size:.76rem;padding:.46rem .55rem;border-radius:7px;min-height:36px;}
+  .btn{font-size:.76rem;padding:.48rem .68rem;border-radius:8px;min-height:36px;line-height:1.15;}
+  .btn-sm{font-size:.68rem;padding:.34rem .52rem;min-height:32px;}
+  .brow{gap:.35rem;}
+
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;}
+  .sbox{padding:.65rem .35rem;border-radius:10px;}
+  .sval{font-size:1.25rem;}
+  .slbl{font-size:.56rem;}
+
+  .stu-card,.pay-card,.hist-item,.mon-card{border-radius:10px;padding:.72rem .75rem;}
+  .stu-hd{gap:.55rem;align-items:flex-start;}
+  .stu-av{width:36px;height:36px;font-size:.78rem;}
+  .stu-info{min-width:0;flex:1;}
+  .stu-info h4{font-size:.82rem;line-height:1.25;}
+  .stu-info p{font-size:.64rem;line-height:1.35;}
+  .stu-actions{gap:.25rem;flex-wrap:wrap;justify-content:flex-end;}
+  .stu-actions .btn{font-size:.62rem;padding:.28rem .43rem;min-height:28px;}
+  .stu-slots{gap:.25rem;}
+  .stu-slot{font-size:.6rem;padding:.14rem .45rem;}
+
+  #st-list > div[style*="margin-bottom:.8rem"]{gap:.35rem;flex-wrap:wrap;}
+  #stu-q{min-width:100%;}
+  #btn-add-stu,#stu-excel-upload + #btn-add-stu{flex:1;}
+
+  .tbl{font-size:.68rem;min-width:520px;}
+  .tbl th{font-size:.6rem;padding:.42rem .45rem;}
+  .tbl td{padding:.42rem .45rem;}
+  .modal-bg{padding:.65rem;align-items:flex-start;overflow-y:auto;}
+  .modal{border-radius:12px;padding:1rem;max-height:none;margin:.35rem 0 1rem;}
+  .modal h3{font-size:.92rem;margin-bottom:.75rem;}
+  .modal-footer{gap:.35rem;}
+  .modal-footer .btn{flex:1;}
+
+  .stu-photo-pick{gap:.6rem;padding:.6rem;align-items:flex-start;}
+  .stu-photo-prev,.stu-photo-empty{width:60px;height:80px;border-radius:7px;}
+
+  .bnav{height:var(--nav-h);}
+  .nitem{font-size:.52rem;padding:.32rem .05rem;gap:.12rem;}
+  .nitem .ic{font-size:1.05rem;}
+}
+
+@media(max-width:360px){
+  .page{padding-left:.5rem !important;padding-right:.5rem !important;}
+  .btn{font-size:.7rem;padding:.42rem .52rem;}
+  .btn-sm{font-size:.62rem;padding:.3rem .42rem;}
+  .tab{min-width:76px;font-size:.62rem;}
+  .dash-stat-card{padding:.62rem .6rem;gap:.45rem;}
+  .dsc-icon{width:34px;height:34px;font-size:1.25rem;}
+  .dsc-val{font-size:1.25rem;}
+  .stu-actions .btn{font-size:.58rem;padding:.25rem .36rem;}
+}</style>
   <!-- SheetJS for Excel parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Google Identity Services -->
@@ -2143,100 +2229,142 @@ function stuTab(id,btn){
 }
 
 // ── 수강료 ──
+function daysInMonth(year,month){return new Date(year,month,0).getDate();}
+function fmtDate(d){const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10);}
+function addMonthsClamped(date,months,preferredDay){
+  const y=date.getFullYear(),m=date.getMonth()+months;
+  const targetY=new Date(y,m,1).getFullYear();
+  const targetM=new Date(y,m,1).getMonth()+1;
+  const day=Math.min(preferredDay,daysInMonth(targetY,targetM));
+  return new Date(targetY,targetM-1,day);
+}
+function getBillingCycle(stu,year,month){
+  const reg=stu.regdate?new Date(stu.regdate):new Date(year,month-1,1);
+  const regDay=reg.getDate()||1;
+  const startDay=Math.min(regDay,daysInMonth(year,month));
+  const start=new Date(year,month-1,startDay);
+  let end;
+  if(regDay===1){end=new Date(year,month,0);}
+  else{end=addMonthsClamped(start,1,regDay);end.setDate(end.getDate()-1);}
+  return {start,end,keyMonth:month,label:`${fmtDate(start).slice(5).replace('-','/')}~${fmtDate(end).slice(5).replace('-','/')}`,fullLabel:`${fmtDate(start)} ~ ${fmtDate(end)}`};
+}
+function getCurrentBillingCycle(stu,baseDate=new Date()){
+  const reg=stu.regdate?new Date(stu.regdate):new Date(baseDate.getFullYear(),baseDate.getMonth(),1);
+  const regDay=reg.getDate()||1;
+  let y=baseDate.getFullYear(),m=baseDate.getMonth()+1;
+  let cycle=getBillingCycle(stu,y,m);
+  if(baseDate<cycle.start){m--;if(m<1){m=12;y--;}cycle=getBillingCycle(stu,y,m);}
+  return {year:y,month:m,...cycle};
+}
+function isCycleBeforeRegistration(stu,cycle){
+  if(!stu.regdate)return false;
+  const reg=new Date(stu.regdate);
+  return cycle.end<new Date(reg.getFullYear(),reg.getMonth(),reg.getDate());
+}
+function getPayMap(stuId,year){return JSON.parse(localStorage.getItem(`pay_${stuId}_${year}`)||'{}');}
+function getCyclePayment(stu,year,month){return getPayMap(stu.id,year)[month];}
+function isCyclePaid(stu,year,month){const v=getCyclePayment(stu,year,month);return v===true||v?.paid===true;}
+function getCycleMemo(stu,year,month){const v=getCyclePayment(stu,year,month);return typeof v==='object'?(v.memo||''):'';}
+function getDueBillingCycles(stu,baseDate=new Date()){
+  const current=getCurrentBillingCycle(stu,baseDate);
+  const due=[];
+  const reg=stu.regdate?new Date(stu.regdate):new Date(current.year,current.month-1,1);
+  let y=reg.getFullYear(),m=reg.getMonth()+1;
+  for(let guard=0;guard<120;guard++){
+    const c={year:y,month:m,...getBillingCycle(stu,y,m)};
+    if(!isCycleBeforeRegistration(stu,c))due.push(c);
+    if(y===current.year&&m===current.month)break;
+    m++;if(m>12){m=1;y++;}
+  }
+  return due;
+}
+function getUnpaidDueCycles(stu,baseDate=new Date()){
+  return getDueBillingCycles(stu,baseDate).filter(c=>!isCyclePaid(stu,c.year,c.month));
+}
+function hasAnyDueUnpaid(stu,baseDate=new Date()){return getUnpaidDueCycles(stu,baseDate).length>0;}
+function getCycleStatusText(stu,baseDate=new Date()){
+  const unpaid=getUnpaidDueCycles(stu,baseDate);
+  if(!unpaid.length)return '✓ 납부 완료';
+  return `✕ 미납 ${unpaid.length}회차`;
+}
+function getCycleStatusColor(stu,baseDate=new Date()){return hasAnyDueUnpaid(stu,baseDate)?'var(--accent)':'var(--sage)';}
+function getPaymentMemoDefault(c){return c.start>new Date()?'선입금':'';}
+
 function renderPay(){
   const yr=parseInt(gv('pay-year')||new Date().getFullYear());
   const wrap=el('pay-list');
   if(!STUS.length){wrap.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.78rem;">등록된 원생이 없어요<br><br><button class="btn btn-b btn-sm" onclick="stuTab(\'list\',document.querySelector(\'.tab\'))">+ 원생 등록</button></div>';return;}
-  let unpaidCnt=0;
-  let totalExpected=0,totalPaid=0;
-  const curMonth=new Date().getMonth()+1;
-  const curYr=new Date().getFullYear();
-  const activeStus2=STUS.filter(s=>!s.status||s.status==='active');
-  // 먼저 현재 달 미납 카운트 계산
-  activeStus2.forEach(s=>{
-    const p=JSON.parse(localStorage.getItem('pay_'+s.id+'_'+curYr)||'{}');
-    if(!p[curMonth])unpaidCnt++;
-  });
-  // 즉시 summary 업데이트
-  const paidCntInit=activeStus2.length-unpaidCnt;
-  if(el('pay-summary')){
-    el('pay-summary').innerHTML=
-      '<span style="color:var(--sage);font-weight:800;">납부 '+paidCntInit+'명</span>'
-      +' <span style="color:var(--muted);">·</span> '
-      +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
+  const yEl=el('pay-year');if(yEl&&!yEl.options.length){
+    const now=new Date().getFullYear();
+    for(let y=now-1;y<=now+1;y++)yEl.innerHTML+=`<option value="${y}" ${y===now?'selected':''}>${y}년</option>`;
   }
-  unpaidCnt=0; // 리셋 후 카드 렌더링에서 재계산
+  const activeStus=STUS.filter(s=>!s.status||s.status==='active');
+  const now=new Date();
+  let allPaid=0,hasUnpaid=0;
+  activeStus.forEach(s=>{hasAnyDueUnpaid(s,now)?hasUnpaid++:allPaid++;});
+  if(el('pay-summary')){
+    el('pay-summary').innerHTML='<span style="color:var(--sage);font-weight:800;">전체 납부 완료 '+allPaid+'명</span>'
+      +' <span style="color:var(--muted);">·</span> '
+      +'<span style="color:var(--accent);font-weight:800;">미납 있음 '+hasUnpaid+'명</span>';
+  }
   wrap.innerHTML=STUS.map(s=>{
-    const pays=JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}');
-    const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-    // 현재 달 기준 미납 여부
-    const isUnpaidThisMonth=(yr===new Date().getFullYear())&&!pays[curMonth];
-    if(isUnpaidThisMonth)unpaidCnt++;
-    const thisPaid=pays[curMonth];
-    return `<div class="pay-card" style="border-left:4px solid ${thisPaid?'var(--sage)':'var(--accent)'};">
+    const cycles=[];
+    for(let m=1;m<=12;m++){
+      const cycle=getBillingCycle(s,yr,m);
+      if(!isCycleBeforeRegistration(s,cycle))cycles.push(cycle);
+    }
+    const current=getCurrentBillingCycle(s,now);
+    const unpaidDue=getUnpaidDueCycles(s,now);
+    const statusColor=getCycleStatusColor(s,now);
+    const unpaidText=unpaidDue.length?unpaidDue.map(c=>c.label).join(', '):'없음';
+    return `<div class="pay-card" style="border-left:4px solid ${statusColor};">
       <div class="pay-hd">
         <span class="pay-name">${s.name}</span>
-        <div style="display:flex;align-items:center;gap:.5rem;">
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;">
           <span class="pay-amount">${s.feeType?getFeeLabel(s.feeType,s.sibling):`월 ${Number(s.fee||0).toLocaleString()}원`}</span>
-          <span style="font-size:.7rem;font-weight:800;color:${thisPaid?'var(--sage)':'var(--accent)'};">${thisPaid?'✓ 납부':'✕ 미납'}</span>
+          <span style="font-size:.68rem;color:var(--muted);">등록일 ${s.regdate||'-'}</span>
+          <span style="font-size:.7rem;font-weight:800;color:${statusColor};">${getCycleStatusText(s,now)}</span>
         </div>
       </div>
+      <div style="font-size:.67rem;color:var(--muted);margin-bottom:.25rem;">현재 주기: ${current.fullLabel}</div>
+      <div style="font-size:.67rem;color:${unpaidDue.length?'var(--accent)':'var(--muted)'};font-weight:${unpaidDue.length?'800':'500'};margin-bottom:.45rem;">미납 회차: ${unpaidText}</div>
       <div class="pay-months">
-        ${months.map((m,i)=>{
-          const paid=pays[i+1];
-          return `<button class="pay-month ${paid?'paid':''}" ${hasPerm('pay_edit')?`onclick="togglePay('${s.id}',${yr},${i+1},this)"`:'disabled style="cursor:default;"'}>${m}</button>`;
+        ${cycles.map(c=>{
+          const paid=isCyclePaid(s,yr,c.keyMonth);
+          const memo=getCycleMemo(s,yr,c.keyMonth);
+          const isNow=yr===current.year&&c.keyMonth===current.month;
+          const isFuture=c.start>now;
+          const extraStyle=(isNow?'border-color:var(--accent);box-shadow:0 0 0 2px rgba(244,67,54,.12);':'')+(isFuture?'outline:2px dotted rgba(21,101,192,.25);':'');
+          return `<button class="pay-month ${paid?'paid':''}" title="${c.fullLabel}${memo?' · '+memo:''}" style="${extraStyle}" ${hasPerm('pay_edit')?`onclick="togglePay('${s.id}',${yr},${c.keyMonth},this)"`:'disabled style="cursor:default;"'}><span style="display:block;font-size:.62rem;">${c.keyMonth}회차${isFuture?' · 선납':''}</span>${c.label}${memo?`<span style="display:block;font-size:.58rem;margin-top:.08rem;">${memo}</span>`:''}</button>`;
         }).join('')}
       </div>
     </div>`;
   }).join('');
-  // 현재 달 기준으로 정확히 재계산
-  let finalUnpaid=0;
-  activeStus2.forEach(s=>{
-    const p2=JSON.parse(localStorage.getItem('pay_'+s.id+'_'+curYr)||'{}');
-    if(!p2[curMonth])finalUnpaid++;
-  });
-  const paidCnt=activeStus2.length-finalUnpaid;
-  if(el('pay-summary')){
-    el('pay-summary').innerHTML=
-      '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt+'명</span>'
-      +' <span style="color:var(--muted);">·</span> '
-      +'<span style="color:var(--accent);font-weight:800;">미납 '+finalUnpaid+'명</span>';
-  }
-  // 연도 셀렉트
-  const yEl=el('pay-year');if(!yEl.options.length){
-    const now=new Date().getFullYear();
-    for(let y=now-1;y<=now+1;y++)yEl.innerHTML+=`<option value="${y}" ${y===now?'selected':''}>${y}년</option>`;
-  }
 }
 
 async function togglePay(stuId,year,month,btn){
+  const stu=STUS.find(s=>s.id===stuId);
+  if(!stu)return;
   const key=`pay_${stuId}_${year}`;
   const pays=JSON.parse(localStorage.getItem(key)||'{}');
-  pays[month]=!pays[month];
+  const current=pays[month];
+  const currentlyPaid=current===true||current?.paid===true;
+  if(currentlyPaid){
+    if(!confirm('이 회차를 미납으로 변경할까요?'))return;
+    pays[month]=false;
+  }else{
+    const cycle=getBillingCycle(stu,year,month);
+    const memoDefault=getPaymentMemoDefault(cycle);
+    const memo=prompt('납부 메모를 입력하세요. 예: 계좌이체, 현금, 선입금',memoDefault);
+    if(memo===null)return;
+    pays[month]={paid:true,memo:(memo||'').trim(),paidAt:new Date().toISOString(),period:cycle.fullLabel};
+  }
   localStorage.setItem(key,JSON.stringify(pays));
-  btn.className=`pay-month ${pays[month]?'paid':''}`;
-  // Firestore에도 저장
   if(FB_READY&&db){
-    try{
-      await db.collection('payments').doc(key).set(pays,{merge:true});
-    }catch(e){console.warn('납부 저장 오류:',e);}
+    try{await db.collection('payments').doc(key).set(pays,{merge:true});}
+    catch(e){console.warn('납부 저장 오류:',e);}
   }
-  // 미납 카운트 갱신 — 현재 달 기준으로만 계산
-  const curMonth=new Date().getMonth()+1;
-  const curYear=new Date().getFullYear();
-  const activeOnly=STUS.filter(s=>!s.status||s.status==='active');
-  let unpaidCnt=0;
-  activeOnly.forEach(s=>{
-    const p=JSON.parse(localStorage.getItem('pay_'+s.id+'_'+curYear)||'{}');
-    if(!p[curMonth]) unpaidCnt++;
-  });
-  const paidCnt2=activeOnly.length-unpaidCnt;
-  if(el('pay-summary')){
-    el('pay-summary').innerHTML=
-      '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt2+'명</span>'
-      +' <span style="color:var(--muted);">·</span> '
-      +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
-  }
+  renderPay();
 }
 
 // ════════════════════════════════════════════
@@ -2562,7 +2690,7 @@ function renderHome(){
   if(el('st-ab'))el('st-ab').textContent=`결석 ${mAb}명`;
 
   const yr=now.getFullYear(),cm=now.getMonth()+1;
-  const unpaid=STUS.filter(s=>{const p=JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}');return !p[cm];}).length;
+  const unpaid=STUS.filter(s=>hasAnyDueUnpaid(s,now)).length;
   if(el('st-unpay'))el('st-unpay').textContent=STUS.length?unpaid:'—';
 
   // 오늘의 수업 현황
@@ -2643,7 +2771,7 @@ function renderHome(){
   if(tbody)tbody.innerHTML=entries.length?entries.slice(0,15).map(([nm,d])=>{
     const t=d.p+d.a,r=t?Math.round(d.p/t*100):0,ac=d.c.length?(d.c.reduce((a,b)=>a+b)/d.c.length).toFixed(1):'-';
     const stu=STUS.find(s=>s.name===nm);
-    const paid=stu?JSON.parse(localStorage.getItem(`pay_${stu.id}_${yr}`)||'{}')[cm]:null;
+    const paid=stu?!hasAnyDueUnpaid(stu):null;
     const payBdg=stu?(paid
       ?'<span class="bdg" style="background:#E8F5E9;color:#1B5E20;font-weight:800;">✓ 납부</span>'
       :'<span class="bdg" style="background:#FFEBEE;color:#B71C1C;font-weight:800;">✕ 미납</span>'):'';
@@ -2747,7 +2875,7 @@ function buildCard(){
   const lessons=recs.filter(r=>r.workName).map(r=>({d:r.date?.slice(5)||'',c:`${r.workName} #${r.workNum||1} · ★${r.completion||'?'}`}));
   const stu=STUS.find(s=>s.name===nm);
   const yr=new Date().getFullYear(),cm=new Date().getMonth()+1;
-  const paid=stu?JSON.parse(localStorage.getItem(`pay_${stu.id}_${yr}`)||'{}')[cm]:null;
+  const paid=stu?!hasAnyDueUnpaid(stu):null;
   el('rcard-wrap').innerHTML=`<div class="rcard"><div class="rhd">
     <div class="r-ac">${CFG.name||'솔브아트'} · Monthly Report</div>
     <div class="r-nm">${nm}</div><div class="r-pd">${m.replace('-','년 ')}월 · 담당: ${recs[0]?.teacher||'선생님'}</div></div>
@@ -3137,8 +3265,8 @@ function openStatDetail(type){
   else if(type==='unpay'){
     title.textContent='💰 수강료 납부 현황';
     const activeStus=STUS.filter(s=>!s.status||s.status==='active');
-    const paidList=activeStus.filter(s=>JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}')[cm]);
-    const unpaidList=activeStus.filter(s=>!JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}')[cm]);
+    const paidList=activeStus.filter(s=>!hasAnyDueUnpaid(s));
+    const unpaidList=activeStus.filter(s=>hasAnyDueUnpaid(s));
     body.innerHTML=`
       <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
         <div style="flex:1;text-align:center;background:#E8F5E9;border-radius:10px;padding:.7rem;border:2px solid #A5D6A7;">
@@ -3154,7 +3282,7 @@ function openStatDetail(type){
       ${unpaidList.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px dotted var(--gold-light);">
         <div>
           <span style="font-weight:700;font-size:.82rem;">${s.name}</span>
-          <span style="font-size:.68rem;color:var(--muted);margin-left:.4rem;">${s.grade||''}</span>
+          <span style="font-size:.68rem;color:var(--muted);margin-left:.4rem;">${s.grade||''}</span><span style="font-size:.66rem;color:var(--accent);margin-left:.4rem;font-weight:700;">미납: ${getUnpaidDueCycles(s).map(c=>c.label).join(', ')}</span>
         </div>
         <div style="text-align:right;">
           <div style="font-size:.76rem;font-weight:700;color:var(--blue);">${s.feeType?getFeeLabel(s.feeType,s.sibling):Number(s.fee||0).toLocaleString()+'원'}</div>
@@ -3165,7 +3293,7 @@ function openStatDetail(type){
       ${paidList.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px dotted var(--gold-light);">
         <div>
           <span style="font-weight:700;font-size:.82rem;">${s.name}</span>
-          <span style="font-size:.68rem;color:var(--muted);margin-left:.4rem;">${s.grade||''}</span>
+          <span style="font-size:.68rem;color:var(--muted);margin-left:.4rem;">${s.grade||''}</span><span style="font-size:.66rem;color:var(--muted);margin-left:.4rem;">현재: ${getCurrentBillingCycle(s).fullLabel}</span>
         </div>
         <div style="font-size:.76rem;font-weight:700;color:var(--sage);">✓ 납부</div>
       </div>`).join('')}`:''}
@@ -3248,7 +3376,7 @@ function openStatDetail(type){
       const avgC=d.c.length?(d.c.reduce((a,b)=>a+b)/d.c.length).toFixed(1):'-';
       const color=rate>=90?'#2E7D32':rate>=70?'#E65100':'#C62828';
       const stu=STUS.find(s=>s.name===nm);
-      const paid=stu?JSON.parse(localStorage.getItem(`pay_${stu.id}_${yr}`)||'{}')[cm]:null;
+      const paid=stu?!hasAnyDueUnpaid(stu):null;
       return `<div style="background:#fff;border:2px solid var(--gold-light);border-radius:10px;padding:.75rem .9rem;margin-bottom:.6rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
           <div style="display:flex;align-items:center;gap:.5rem;">
@@ -4481,7 +4609,7 @@ function openEducationReport(stuId,stuName,photos){
   const tot=pr+ab,rate=tot?Math.round(pr/tot*100):0;
   const lessons=recs.filter(r=>r.workName).map(r=>({date:r.date?.slice(5)||'',work:r.workName,num:r.workNum||1,comp:r.completion||0}));
   const yr=new Date().getFullYear(),cm=new Date().getMonth()+1;
-  const paid=stu?JSON.parse(localStorage.getItem('pay_'+stu.id+'_'+yr)||'{}')[cm]:null;
+  const paid=stu?!hasAnyDueUnpaid(stu):null;
 
   el('rview-title').textContent=stuName+' 교육 리포트';
   el('rview-name').textContent=stuName;
