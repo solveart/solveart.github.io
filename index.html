@@ -1575,6 +1575,15 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
         <button type="button" class="btn btn-b btn-sm" onclick="document.getElementById('artwork-upload-input').click()">+ 이미지</button>
         <input type="file" id="artwork-upload-input" accept="image/*" multiple style="display:none;" onchange="handleArtworkUpload(event)">
       </div>
+      <div style="display:flex;gap:.45rem;align-items:center;margin-bottom:.65rem;">
+        <label for="artwork-sort" style="font-size:.7rem;font-weight:800;color:var(--muted);white-space:nowrap;">정렬</label>
+        <select id="artwork-sort" class="inp" style="padding:.34rem .5rem;font-size:.74rem;" onchange="setArtworkSort(this.value)">
+          <option value="date-desc">완성/수업일 최신순</option>
+          <option value="date-asc">완성/수업일 오래된순</option>
+          <option value="name-asc">작품명순</option>
+          <option value="created-desc">등록일 최신순</option>
+        </select>
+      </div>
       <div id="local-art-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;"></div>
       <div id="local-art-empty" style="text-align:center;padding:1rem;color:var(--muted);font-size:.75rem;display:none;">등록된 작품 사진이 없어요</div>
       <div id="local-art-selected" style="display:none;margin-top:.7rem;background:#fff;border:1.5px solid var(--gold-light);border-radius:8px;padding:.55rem;">
@@ -4540,10 +4549,26 @@ let gapiReady=false,gisReady=false,tokenClient=null,driveAccessToken=null;
 let currentDriveStuId='',currentDriveFolderId='',currentDriveStuName='';
 let selectedDriveFiles=[],drivePageToken=null;
 let localArtworks=[];
+let currentDriveFiles=[];
+let artworkSort='date-desc';
 
 function getArtworkKey(stuId){return 'artworks_'+stuId;}
 function getArtworkList(stuId){return JSON.parse(localStorage.getItem(getArtworkKey(stuId))||'[]');}
 function saveArtworkList(stuId,list){localStorage.setItem(getArtworkKey(stuId),JSON.stringify(list));}
+function sortArtworkItems(list){
+  const arr=[...list];
+  const getDate=a=>a.date||a.createdTime?.slice(0,10)||a.createdAt?.slice(0,10)||'';
+  if(artworkSort==='date-asc')arr.sort((a,b)=>getDate(a).localeCompare(getDate(b))||String(a.name||'').localeCompare(String(b.name||''),'ko'));
+  else if(artworkSort==='name-asc')arr.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko')||getDate(b).localeCompare(getDate(a)));
+  else if(artworkSort==='created-desc')arr.sort((a,b)=>(b.createdAt||b.createdTime||'').localeCompare(a.createdAt||a.createdTime||''));
+  else arr.sort((a,b)=>getDate(b).localeCompare(getDate(a))||String(a.name||'').localeCompare(String(b.name||''),'ko'));
+  return arr;
+}
+function setArtworkSort(v){
+  artworkSort=v||'date-desc';
+  renderLocalArtworks();
+  renderDriveFiles();
+}
 function resizeArtworkImage(file){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -4571,7 +4596,7 @@ async function loadArtworks(stuId){
       const snap=await db.collection('students').doc(stuId).collection('artworks').orderBy('createdAt','desc').get();
       const remote=[];snap.forEach(d=>remote.push({id:d.id,...d.data()}));
       const ids=new Set(remote.map(a=>a.id));
-      list=[...remote,...list.filter(a=>!ids.has(a.id))].sort((a,b)=>(b.createdAt||'')>(a.createdAt||'')?1:-1);
+      list=sortArtworkItems([...remote,...list.filter(a=>!ids.has(a.id))]);
       saveArtworkList(stuId,list);
     }catch(e){console.warn('작품 로드 오류:',e);}
   }
@@ -4583,7 +4608,7 @@ function renderLocalArtworks(){
   if(!localArtworks.length){grid.innerHTML='';if(empty)empty.style.display='block';if(bar)bar.style.display='none';return;}
   if(empty)empty.style.display='none';
   const selectedIds=new Set(selectedDriveFiles.filter(f=>f.source==='local').map(f=>f.id));
-  grid.innerHTML=localArtworks.map(a=>{
+  grid.innerHTML=sortArtworkItems(localArtworks).map(a=>{
     const on=selectedIds.has(a.id);
     return `<div class="drive-photo-card" id="art-${a.id}" style="outline:${on?'3px solid var(--gold)':'none'};">
       <img src="${a.thumb}" alt="${a.name||'작품'}" onclick="toggleLocalArtwork('${a.id}')" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:2px solid var(--gold-light);">
@@ -4604,13 +4629,18 @@ function toggleLocalArtwork(id){
 async function handleArtworkUpload(event){
   const files=[...(event.target.files||[])];if(!files.length)return;
   if(!currentDriveStuId){toast('원생을 먼저 선택하세요');return;}
+  const artDate=prompt('선택한 작품들의 수업/완성일을 입력하세요',today());
+  if(artDate===null){event.target.value='';return;}
+  const commonName=prompt('공통 작품명을 입력하세요. 비워두면 파일명을 사용합니다','');
+  if(commonName===null){event.target.value='';return;}
   showOv('작품 이미지 줄이는 중…');
   try{
-    for(const file of files){
+    for(let i=0;i<files.length;i++){
+      const file=files[i];
       const thumb=await resizeArtworkImage(file);
       const baseName=file.name.replace(/\.[^.]+$/,'');
-      const name=prompt('작품명을 입력하세요',baseName)||baseName||'작품';
-      const art={id:'art_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name,thumb,date:today(),createdAt:new Date().toISOString(),createdBy:CU?.uid||''};
+      const name=(commonName||'').trim()?(files.length>1?`${commonName.trim()} ${i+1}`:commonName.trim()):(baseName||'작품');
+      const art={id:'art_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name,thumb,date:artDate||today(),createdAt:new Date().toISOString(),createdBy:CU?.uid||''};
       localArtworks.unshift(art);
       if(FB_READY&&db){try{await db.collection('students').doc(currentDriveStuId).collection('artworks').doc(art.id).set(art);}catch(e){console.warn('작품 저장 오류:',e);}}
     }
@@ -4661,7 +4691,7 @@ function signOutGoogle(){
 }
 function openDriveGallery(stuId,stuName,folderId){
   currentDriveStuId=stuId;currentDriveStuName=stuName;currentDriveFolderId=folderId;
-  selectedDriveFiles=[];drivePageToken=null;localArtworks=[];
+  selectedDriveFiles=[];drivePageToken=null;localArtworks=[];currentDriveFiles=[];
   el('drive-title').textContent='🖼 '+stuName+' 작품 갤러리';
   el('drive-grid').innerHTML='';
   el('drive-empty').style.display='none';
@@ -4698,21 +4728,33 @@ async function showDriveGallery(){
     drivePageToken=resp.result.nextPageToken||null;
     if(!files.length){el('drive-empty').style.display='block';return;}
     el('drive-page-info').textContent='총 '+files.length+'장'+(drivePageToken?' (더보기 가능)':'');
-    el('drive-grid').innerHTML=files.map(f=>{
-      const thumb=f.thumbnailLink?f.thumbnailLink.replace('=s220','=s400'):'https://drive.google.com/thumbnail?id='+f.id+'&sz=w400';
-      const date=f.createdTime?f.createdTime.slice(0,10):'';
-      const oc='toggleDrivePhoto("'+f.id+'","'+f.name.replace(/"/g,"'")+'","'+thumb+'","'+date+'")';
-      return '<div class="drive-photo-card" id="dpc-'+f.id+'" onclick="'+oc+'">'
-        +'<img src="'+thumb+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:2px solid var(--gold-light);">'
-        +'<div style="font-size:.6rem;color:var(--muted);margin-top:.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+date+'</div>'
-        +'<div class="drive-check-icon" id="dchk-'+f.id+'">✓</div>'
-        +'</div>';
-    }).join('');
+    currentDriveFiles=[...currentDriveFiles,...files].filter((f,i,arr)=>arr.findIndex(x=>x.id===f.id)===i);
+    renderDriveFiles();
   }catch(e){
     el('drive-loading').style.display='none';
     if(e.status===401){driveAccessToken=null;el('drive-login-section').style.display='block';el('drive-gallery-section').style.display='none';toast('⚠️ 로그인이 만료됐어요');}
     else toast('❌ 사진 불러오기 실패: '+(e.result?.error?.message||e.message||''));
   }
+}
+function renderDriveFiles(){
+  const grid=el('drive-grid');if(!grid)return;
+  const files=sortArtworkItems(currentDriveFiles.map(f=>({...f,date:f.createdTime?f.createdTime.slice(0,10):''})));
+  grid.innerHTML=files.map(f=>{
+    const thumb=f.thumbnailLink?f.thumbnailLink.replace('=s220','=s400'):'https://drive.google.com/thumbnail?id='+f.id+'&sz=w400';
+    const date=f.date||'';
+    const safeName=(f.name||'작품').replace(/"/g,"'");
+    const oc='toggleDrivePhoto("'+f.id+'","'+safeName+'","'+thumb+'","'+date+'")';
+    return '<div class="drive-photo-card" id="dpc-'+f.id+'" onclick="'+oc+'">'
+      +'<img src="'+thumb+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:2px solid var(--gold-light);">'
+      +'<div style="font-size:.6rem;color:var(--muted);margin-top:.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+safeName+' · '+date+'</div>'
+      +'<div class="drive-check-icon" id="dchk-'+f.id+'">✓</div>'
+      +'</div>';
+  }).join('');
+  selectedDriveFiles.forEach(f=>{
+    const card=el('dpc-'+f.id),chk=el('dchk-'+f.id);
+    if(card)card.style.outline='3px solid var(--gold)';
+    if(chk)chk.style.display='flex';
+  });
 }
 function toggleDrivePhoto(id,name,thumb,date){
   const idx=selectedDriveFiles.findIndex(f=>f.id===id);
