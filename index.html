@@ -419,36 +419,36 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 
   <!-- 통계 카드 4개 -->
   <div class="dash-stats">
-    <div class="dash-stat-card c1">
+    <div class="dash-stat-card c1" onclick="openStatDetail('students')" style="cursor:pointer;">
       <div class="dsc-icon">👥</div>
       <div class="dsc-body">
         <div class="dsc-val" id="st-total">—</div>
         <div class="dsc-lbl">전체 원생</div>
-        <div class="dsc-sub">수강중 원생</div>
+        <div class="dsc-sub">수강중 원생 <span style="font-size:.6rem;color:var(--gold);">▶ 상세</span></div>
       </div>
     </div>
-    <div class="dash-stat-card c2">
+    <div class="dash-stat-card c2" onclick="openStatDetail('today-att')" style="cursor:pointer;">
       <div class="dsc-icon">✅</div>
       <div class="dsc-body">
         <div class="dsc-val" id="st-today-att">—</div>
         <div class="dsc-lbl">오늘 출석</div>
-        <div class="dsc-sub" id="st-att-rate">출석률 —%</div>
+        <div class="dsc-sub" id="st-att-rate">출석률 —% <span style="font-size:.6rem;color:var(--gold);">▶ 상세</span></div>
       </div>
     </div>
-    <div class="dash-stat-card c3">
+    <div class="dash-stat-card c3" onclick="openStatDetail('month-att')" style="cursor:pointer;">
       <div class="dsc-icon">📊</div>
       <div class="dsc-body">
         <div class="dsc-val" id="st-rate">—</div>
         <div class="dsc-lbl">이달 출석률</div>
-        <div class="dsc-sub" id="st-ab">결석 — 명</div>
+        <div class="dsc-sub" id="st-ab">결석 — 명 <span style="font-size:.6rem;color:var(--gold);">▶ 상세</span></div>
       </div>
     </div>
-    <div class="dash-stat-card c4">
+    <div class="dash-stat-card c4" onclick="openStatDetail('unpay')" style="cursor:pointer;">
       <div class="dsc-icon">💰</div>
       <div class="dsc-body">
         <div class="dsc-val" id="st-unpay">—</div>
         <div class="dsc-lbl">미납 인원</div>
-        <div class="dsc-sub">이번 달 기준</div>
+        <div class="dsc-sub">이번 달 기준 <span style="font-size:.6rem;color:var(--gold);">▶ 상세</span></div>
       </div>
     </div>
   </div>
@@ -458,11 +458,15 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
     <div class="card" style="flex:2;min-width:0;">
       <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
         <span>📅 오늘의 수업 현황</span>
+        <button class="btn btn-o btn-sm" onclick="openStatDetail('today-att')" style="font-size:.65rem;">상세 보기</button>
       </div>
       <div id="d-today-class"></div>
     </div>
     <div class="card" style="flex:1;min-width:0;">
-      <div class="ctitle">🎨 완성도 분포 (이번 주)</div>
+      <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>🎨 완성도 분포 (이번 주)</span>
+        <button class="btn btn-o btn-sm" onclick="openStatDetail('completion')" style="font-size:.65rem;">상세 보기</button>
+      </div>
       <div id="d-completion"></div>
     </div>
   </div>
@@ -471,7 +475,10 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   <div class="card">
     <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
       <span>📷 최근 스캔 기록</span>
-      <button class="btn btn-gold btn-sm" onclick="nav('scan')">+ 스캔하기</button>
+      <div style="display:flex;gap:.4rem;">
+        <button class="btn btn-o btn-sm" onclick="openStatDetail('recent')" style="font-size:.65rem;">상세 보기</button>
+        <button class="btn btn-gold btn-sm" onclick="nav('scan')">+ 스캔하기</button>
+      </div>
     </div>
     <div id="d-recent"></div>
   </div>
@@ -480,7 +487,10 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   <div class="card">
     <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
       <span>👥 이달 원생 현황</span>
-      <button class="btn btn-o btn-sm" onclick="nav('students')">전체 보기</button>
+      <div style="display:flex;gap:.4rem;">
+        <button class="btn btn-o btn-sm" onclick="openStatDetail('month-stu')" style="font-size:.65rem;">상세 보기</button>
+        <button class="btn btn-gold btn-sm" onclick="nav('students')">원생 관리</button>
+      </div>
     </div>
     <div style="overflow-x:auto;">
       <table class="tbl">
@@ -737,6 +747,17 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 </div><!-- /content-area -->
 </div><!-- /app-body -->
 </div><!-- /main-app -->
+
+<!-- 모달: 대시보드 상세 -->
+<div class="modal-bg" id="modal-stat-detail">
+  <div class="modal" style="max-width:500px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 id="stat-detail-title">상세 정보</h3>
+      <button class="btn btn-o btn-sm" onclick="closeM('modal-stat-detail')">✕ 닫기</button>
+    </div>
+    <div id="stat-detail-body"></div>
+  </div>
+</div>
 
 <!-- 모달: 원생 관리 (퇴원/휴강/보강/수업변경) -->
 <div class="modal-bg" id="modal-stu-mgmt">
@@ -1749,7 +1770,9 @@ function renderHome(){
   const dayNames=['일','월','화','수','목','금','토'];
   const dayStr=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${dayNames[now.getDay()]})`;
   if(el('d-date'))el('d-date').textContent=dayStr;
-  if(el('hello-name'))el('hello-name').textContent=CP?.name||'선생님';
+  const isAdmin2 = CP?.role==='admin';
+  const helloTitle = isAdmin2 ? '원장님' : (CP?.name||'선생님')+'선생님';
+  if(el('hello-name'))el('hello-name').textContent=helloTitle;
 
   const m=today().slice(0,7),mR=DB.filter(r=>r.date?.startsWith(m));
   const todayRecs=DB.filter(r=>r.date===today());
@@ -2181,6 +2204,267 @@ function nav(id){
   if(id==='result'){}
 }
 
+
+// ════════════════════════════════════════════
+//  대시보드 상세 팝업
+// ════════════════════════════════════════════
+function openStatDetail(type){
+  const modal=el('modal-stat-detail');
+  const title=el('stat-detail-title');
+  const body=el('stat-detail-body');
+  const m=today().slice(0,7);
+  const mR=DB.filter(r=>r.date?.startsWith(m));
+  const yr=new Date().getFullYear(),cm=new Date().getMonth()+1;
+
+  if(type==='students'){
+    title.textContent='👥 원생 현황';
+    const active=STUS.filter(s=>!s.status||s.status==='active');
+    const pause=STUS.filter(s=>s.status==='pause');
+    const out=STUS.filter(s=>s.status==='out');
+    body.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1rem;">
+        <div style="text-align:center;background:#E8F5E9;border-radius:10px;padding:.8rem;border:2px solid #A5D6A7;">
+          <div style="font-size:1.6rem;font-weight:900;color:#2E7D32;">${active.length}</div>
+          <div style="font-size:.72rem;font-weight:700;color:#2E7D32;">수강중</div>
+        </div>
+        <div style="text-align:center;background:#FFF8E1;border-radius:10px;padding:.8rem;border:2px solid #FFE082;">
+          <div style="font-size:1.6rem;font-weight:900;color:#F57F17;">${pause.length}</div>
+          <div style="font-size:.72rem;font-weight:700;color:#F57F17;">휴강중</div>
+        </div>
+        <div style="text-align:center;background:#FFEBEE;border-radius:10px;padding:.8rem;border:2px solid #EF9A9A;">
+          <div style="font-size:1.6rem;font-weight:900;color:#C62828;">${out.length}</div>
+          <div style="font-size:.72rem;font-weight:700;color:#C62828;">퇴원</div>
+        </div>
+      </div>
+      <div style="font-size:.75rem;font-weight:800;color:var(--muted);margin-bottom:.5rem;border-bottom:1px solid var(--gold-light);padding-bottom:.4rem;">수강중 원생 목록</div>
+      ${active.length?active.map(s=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px dotted var(--gold-light);">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.85rem;">${(s.name||'?')[0]}</div>
+        <div style="flex:1;">
+          <div style="font-size:.82rem;font-weight:700;">${s.name}</div>
+          <div style="font-size:.68rem;color:var(--muted);">${[s.grade,s.school].filter(Boolean).join(' · ')||'정보없음'}</div>
+        </div>
+        <div style="font-size:.7rem;color:var(--blue);font-weight:700;">${s.feeType?getFeeLabel(s.feeType,s.sibling):''}</div>
+      </div>`).join(''):'<div style="text-align:center;padding:1rem;color:var(--muted);">원생 없음</div>'}
+      <div style="margin-top:.8rem;text-align:right;">
+        <button class="btn btn-gold btn-sm" onclick="closeM('modal-stat-detail');nav('students');">원생 관리 →</button>
+      </div>`;
+  }
+
+  else if(type==='today-att'){
+    title.textContent='✅ 오늘 출석 현황';
+    const todayRecs=DB.filter(r=>r.date===today());
+    const slots=['1~2시','2~3시','3~4시','4~5시','5~6시'];
+    const pr=todayRecs.filter(r=>r.attendance==='present').length;
+    const ab=todayRecs.filter(r=>r.attendance==='absent').length;
+    const lt=todayRecs.filter(r=>r.attendance==='late').length;
+    body.innerHTML=`
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
+        <div style="flex:1;text-align:center;background:#E8F5E9;border-radius:10px;padding:.7rem;border:2px solid #A5D6A7;">
+          <div style="font-size:1.5rem;font-weight:900;color:#2E7D32;">${pr}</div>
+          <div style="font-size:.7rem;font-weight:700;color:#2E7D32;">출석</div>
+        </div>
+        <div style="flex:1;text-align:center;background:#FFEBEE;border-radius:10px;padding:.7rem;border:2px solid #EF9A9A;">
+          <div style="font-size:1.5rem;font-weight:900;color:#C62828;">${ab}</div>
+          <div style="font-size:.7rem;font-weight:700;color:#C62828;">결석</div>
+        </div>
+        <div style="flex:1;text-align:center;background:#FFF8E1;border-radius:10px;padding:.7rem;border:2px solid #FFE082;">
+          <div style="font-size:1.5rem;font-weight:900;color:#F57F17;">${lt}</div>
+          <div style="font-size:.7rem;font-weight:700;color:#F57F17;">지각</div>
+        </div>
+      </div>
+      ${todayRecs.length?slots.map(sl=>{
+        const rs=todayRecs.filter(r=>r.timeSlot===sl);
+        if(!rs.length)return '';
+        return `<div style="margin-bottom:.7rem;">
+          <div style="font-size:.72rem;font-weight:800;color:var(--muted);margin-bottom:.3rem;background:var(--gold-pale);padding:.3rem .6rem;border-radius:6px;">⏰ ${sl}</div>
+          ${rs.map(r=>`<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem .4rem;border-bottom:1px dotted var(--gold-light);font-size:.78rem;">
+            <span style="font-size:1rem;">${r.attendance==='present'?'○':r.attendance==='absent'?'✕':'△'}</span>
+            <span style="font-weight:700;min-width:50px;">${r.studentName||'?'}</span>
+            <span style="color:var(--muted);flex:1;">${r.workName||'-'}${r.workNum?' #'+r.workNum:''}</span>
+            <span style="color:var(--gold);">${'★'.repeat(r.completion||0)||''}</span>
+          </div>`).join('')}
+        </div>`;
+      }).join(''):'<div style="text-align:center;padding:2rem;color:var(--muted);">오늘 수업 기록 없음</div>'}`;
+  }
+
+  else if(type==='month-att'){
+    title.textContent='📊 이달 출석 현황';
+    const smap={};
+    mR.forEach(r=>{
+      if(!r.studentName)return;
+      if(!smap[r.studentName])smap[r.studentName]={p:0,a:0,l:0};
+      if(r.attendance==='present')smap[r.studentName].p++;
+      else if(r.attendance==='absent')smap[r.studentName].a++;
+      else smap[r.studentName].l++;
+    });
+    const entries=Object.entries(smap).sort((a,b)=>{
+      const ra=a[1].p/(a[1].p+a[1].a+a[1].l||1);
+      const rb=b[1].p/(b[1].p+b[1].a+b[1].l||1);
+      return rb-ra;
+    });
+    body.innerHTML=entries.length?`
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.7rem;">${m.replace('-','년 ')}월 기준</div>
+      ${entries.map(([nm,d])=>{
+        const tot=d.p+d.a+d.l,rate=tot?Math.round(d.p/tot*100):0;
+        const color=rate>=90?'#2E7D32':rate>=70?'#E65100':'#C62828';
+        return `<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px dotted var(--gold-light);">
+          <span style="font-weight:700;min-width:55px;font-size:.82rem;">${nm}</span>
+          <div style="flex:1;background:var(--gold-pale);border-radius:4px;height:12px;overflow:hidden;border:1px solid var(--gold-light);">
+            <div style="height:100%;background:${color};width:${rate}%;border-radius:4px;transition:width .6s;"></div>
+          </div>
+          <span style="font-size:.72rem;font-weight:800;color:${color};min-width:35px;">${rate}%</span>
+          <span style="font-size:.68rem;color:var(--muted);">출${d.p}/결${d.a}</span>
+        </div>`;
+      }).join('')}`
+    :'<div style="text-align:center;padding:2rem;color:var(--muted);">이달 기록 없음</div>';
+  }
+
+  else if(type==='unpay'){
+    title.textContent='💰 수강료 납부 현황';
+    const activeStus=STUS.filter(s=>!s.status||s.status==='active');
+    const paidList=activeStus.filter(s=>JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}')[cm]);
+    const unpaidList=activeStus.filter(s=>!JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}')[cm]);
+    body.innerHTML=`
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
+        <div style="flex:1;text-align:center;background:#E8F5E9;border-radius:10px;padding:.7rem;border:2px solid #A5D6A7;">
+          <div style="font-size:1.5rem;font-weight:900;color:#2E7D32;">${paidList.length}</div>
+          <div style="font-size:.7rem;font-weight:700;color:#2E7D32;">납부완료</div>
+        </div>
+        <div style="flex:1;text-align:center;background:#FFEBEE;border-radius:10px;padding:.7rem;border:2px solid #EF9A9A;">
+          <div style="font-size:1.5rem;font-weight:900;color:#C62828;">${unpaidList.length}</div>
+          <div style="font-size:.7rem;font-weight:700;color:#C62828;">미납</div>
+        </div>
+      </div>
+      ${unpaidList.length?`<div style="font-size:.75rem;font-weight:800;color:var(--accent);margin-bottom:.5rem;padding:.3rem .6rem;background:#FFEBEE;border-radius:6px;">⚠️ 미납 원생</div>
+      ${unpaidList.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px dotted var(--gold-light);">
+        <div>
+          <span style="font-weight:700;font-size:.82rem;">${s.name}</span>
+          <span style="font-size:.68rem;color:var(--muted);margin-left:.4rem;">${s.grade||''}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.76rem;font-weight:700;color:var(--blue);">${s.feeType?getFeeLabel(s.feeType,s.sibling):Number(s.fee||0).toLocaleString()+'원'}</div>
+          <div style="font-size:.65rem;color:var(--accent);">미납</div>
+        </div>
+      </div>`).join('')}`:''}
+      ${paidList.length?`<div style="font-size:.75rem;font-weight:800;color:var(--sage);margin:.7rem 0 .5rem;padding:.3rem .6rem;background:#E8F5E9;border-radius:6px;">✅ 납부 완료</div>
+      ${paidList.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px dotted var(--gold-light);">
+        <div>
+          <span style="font-weight:700;font-size:.82rem;">${s.name}</span>
+          <span style="font-size:.68rem;color:var(--muted);margin-left:.4rem;">${s.grade||''}</span>
+        </div>
+        <div style="font-size:.76rem;font-weight:700;color:var(--sage);">✓ 납부</div>
+      </div>`).join('')}`:''}
+      <div style="margin-top:.8rem;text-align:right;">
+        <button class="btn btn-gold btn-sm" onclick="closeM('modal-stat-detail');nav('students');setTimeout(()=>stuTab('pay',document.querySelectorAll('#page-students .tab')[2]),100);">수강료 관리 →</button>
+      </div>`;
+  }
+
+  else if(type==='completion'){
+    title.textContent='🎨 완성도 분포 상세';
+    const now2=new Date(),dow=now2.getDay(),mon=new Date(now2);
+    mon.setDate(now2.getDate()-(dow===0?6:dow-1));
+    const wRecs=DB.filter(r=>r.date&&new Date(r.date)>=mon&&r.completion>0);
+    const compCnt=[0,0,0,0,0];
+    wRecs.forEach(r=>{if(r.completion>=1&&r.completion<=5)compCnt[r.completion-1]++;});
+    const total=compCnt.reduce((a,b)=>a+b,0);
+    const compColors=['#FFB300','#FFC800','#4CAF50','#2196F3','#9C27B0'];
+    const compLabels=['① 시작','② 밑색','③ 명암','④ 마무리','⑤ 완성'];
+    const stuComp={};
+    wRecs.filter(r=>r.completion===5).forEach(r=>{
+      if(!stuComp[r.studentName])stuComp[r.studentName]=[];
+      stuComp[r.studentName].push(r.workName||'작품');
+    });
+    body.innerHTML=`
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.8rem;">이번 주 총 ${total}건</div>
+      ${total?compCnt.map((c,i)=>{
+        const pct=total?Math.round(c/total*100):0;
+        return `<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
+          <span style="font-size:.76rem;font-weight:700;min-width:55px;">${compLabels[i]}</span>
+          <div style="flex:1;background:var(--gold-pale);border-radius:5px;height:14px;overflow:hidden;border:1px solid var(--gold-light);">
+            <div style="height:100%;background:${compColors[i]};width:${pct}%;border-radius:5px;"></div>
+          </div>
+          <span style="font-size:.72rem;font-weight:800;min-width:45px;text-align:right;">${c}건 ${pct}%</span>
+        </div>`;
+      }).join(''):'<div style="text-align:center;padding:1.5rem;color:var(--muted);">이번 주 기록 없음</div>'}
+      ${Object.keys(stuComp).length?`<div style="margin-top:1rem;font-size:.75rem;font-weight:800;color:#7B1FA2;padding:.3rem .6rem;background:#F3E5F5;border-radius:6px;margin-bottom:.5rem;">⭐ 이번 주 완성 작품</div>
+      ${Object.entries(stuComp).map(([nm,works])=>`<div style="display:flex;gap:.5rem;padding:.35rem 0;border-bottom:1px dotted var(--gold-light);font-size:.78rem;">
+        <span style="font-weight:700;min-width:55px;">${nm}</span>
+        <span style="color:var(--muted);">${works.join(', ')}</span>
+      </div>`).join('')}`:''}`;
+  }
+
+  else if(type==='recent'){
+    title.textContent='📷 스캔 기록 상세';
+    const dates=[...new Set(DB.map(r=>r.date).filter(Boolean))].sort().reverse().slice(0,10);
+    body.innerHTML=dates.length?dates.map(d=>{
+      const rs=DB.filter(r=>r.date===d);
+      const pr=rs.filter(r=>r.attendance==='present').length;
+      const ab=rs.filter(r=>r.attendance==='absent').length;
+      const rate=rs.length?Math.round(pr/rs.length*100):0;
+      return `<div style="background:var(--gold-pale);border-radius:10px;padding:.7rem .9rem;margin-bottom:.6rem;border:1.5px solid var(--gold-light);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+          <strong style="font-size:.84rem;">📋 ${d}</strong>
+          <span style="font-size:.72rem;font-weight:800;color:${rate>=90?'#2E7D32':rate>=70?'#E65100':'#C62828'};">${rate}%</span>
+        </div>
+        <div style="display:flex;gap:.5rem;font-size:.72rem;">
+          <span style="color:var(--sage);font-weight:700;">출석 ${pr}명</span>
+          <span style="color:var(--accent);font-weight:700;">결석 ${ab}명</span>
+          <span style="color:var(--muted);">총 ${rs.length}명</span>
+        </div>
+        <div style="margin-top:.4rem;display:flex;flex-wrap:wrap;gap:.25rem;">
+          ${rs.filter(r=>r.attendance==='absent').map(r=>`<span style="font-size:.65rem;background:#FFEBEE;color:#C62828;padding:.1rem .4rem;border-radius:10px;font-weight:700;">✕${r.studentName}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join(''):'<div style="text-align:center;padding:2rem;color:var(--muted);">스캔 기록이 없어요</div>';
+  }
+
+  else if(type==='month-stu'){
+    title.textContent='👥 이달 원생 현황 상세';
+    const smap2={};
+    mR.forEach(r=>{
+      if(!r.studentName)return;
+      if(!smap2[r.studentName])smap2[r.studentName]={p:0,a:0,c:[],works:[]};
+      r.attendance==='present'?smap2[r.studentName].p++:smap2[r.studentName].a++;
+      if(r.completion)smap2[r.studentName].c.push(r.completion);
+      if(r.workName&&!smap2[r.studentName].works.includes(r.workName))smap2[r.studentName].works.push(r.workName);
+    });
+    body.innerHTML=Object.entries(smap2).length?Object.entries(smap2).map(([nm,d])=>{
+      const tot=d.p+d.a,rate=tot?Math.round(d.p/tot*100):0;
+      const avgC=d.c.length?(d.c.reduce((a,b)=>a+b)/d.c.length).toFixed(1):'-';
+      const color=rate>=90?'#2E7D32':rate>=70?'#E65100':'#C62828';
+      const stu=STUS.find(s=>s.name===nm);
+      const paid=stu?JSON.parse(localStorage.getItem(`pay_${stu.id}_${yr}`)||'{}')[cm]:null;
+      return `<div style="background:#fff;border:2px solid var(--gold-light);border-radius:10px;padding:.75rem .9rem;margin-bottom:.6rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.8rem;">${nm[0]}</div>
+            <div>
+              <div style="font-size:.84rem;font-weight:800;">${nm}</div>
+              <div style="font-size:.67rem;color:var(--muted);">${stu?[stu.grade,stu.school].filter(Boolean).join(' · '):'정보없음'}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:.68rem;font-weight:800;background:${paid?'#E8F5E9':'#FFEBEE'};color:${paid?'#2E7D32':'#C62828'};padding:.15rem .5rem;border-radius:10px;">${paid?'✓납부':'✕미납'}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;">
+          <div style="flex:1;background:var(--gold-pale);border-radius:4px;height:10px;overflow:hidden;border:1px solid var(--gold-light);">
+            <div style="height:100%;background:${color};width:${rate}%;border-radius:4px;"></div>
+          </div>
+          <span style="font-size:.72rem;font-weight:800;color:${color};min-width:35px;">${rate}%</span>
+        </div>
+        <div style="display:flex;gap:.6rem;font-size:.68rem;color:var(--muted);">
+          <span>출석 <strong style="color:var(--sage);">${d.p}</strong></span>
+          <span>결석 <strong style="color:var(--accent);">${d.a}</strong></span>
+          <span>완성도 <strong>${avgC}</strong></span>
+          ${d.works.length?`<span>진행작품: <strong>${d.works.join(', ')}</strong></span>`:''}
+        </div>
+      </div>`;
+    }).join(''):'<div style="text-align:center;padding:2rem;color:var(--muted);">이달 기록 없음</div>';
+  }
+
+  modal.classList.add('show');
+}
 
 // ════════════════════════════════════════════
 //  GOOGLE DRIVE 연동
