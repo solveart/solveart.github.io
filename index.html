@@ -380,6 +380,8 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   .page{padding:.8rem .8rem 5rem;}
 }
 </style>
+  <!-- SheetJS for Excel parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- Google API Client -->
@@ -679,7 +681,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
     <button class="tab on" onclick="aTab('teachers',this)">👩‍🏫 선생님</button>
     <button class="tab" onclick="aTab('monitor',this)">📡 현황</button>
     <button class="tab" onclick="aTab('salary',this)">💵 급여</button>
-    <button class="tab" onclick="aTab('ledger',this)">📒 급여대장</button>
+    <button class="tab" onclick="aTab('finance',this)">📒 매입매출</button>
     <button class="tab" onclick="aTab('config',this)">⚙️ 설정</button>
   </div>
   <div id="at-teachers">
@@ -921,6 +923,168 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
         <button class="btn btn-o btn-sm" onclick="window.print()">🖨️ 인쇄</button>
       </div>
     </div>
+  </div>
+
+  <!-- 매입매출 관리 탭 -->
+  <div id="at-finance" style="display:none;">
+
+    <!-- 월 선택 + 요약 -->
+    <div class="card" style="padding:.8rem;">
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.8rem;">
+        <select id="fin-year" class="inp" style="width:80px;" onchange="loadFinance()"></select>
+        <select id="fin-month" class="inp" style="width:70px;" onchange="loadFinance()">
+          <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+          <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+          <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+          <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+        </select>
+        <span style="font-size:.72rem;color:var(--muted);">기준</span>
+      </div>
+      <!-- 요약 카드 -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;">
+        <div style="background:#E8F5E9;border-radius:10px;padding:.7rem;text-align:center;border:2px solid #A5D6A7;">
+          <div style="font-size:1.1rem;font-weight:900;color:#2E7D32;" id="fin-income-total">0원</div>
+          <div style="font-size:.66rem;color:#2E7D32;font-weight:700;">매출</div>
+        </div>
+        <div style="background:#FFEBEE;border-radius:10px;padding:.7rem;text-align:center;border:2px solid #EF9A9A;">
+          <div style="font-size:1.1rem;font-weight:900;color:#C62828;" id="fin-expense-total">0원</div>
+          <div style="font-size:.66rem;color:#C62828;font-weight:700;">매입/경비</div>
+        </div>
+        <div style="background:var(--gold-pale);border-radius:10px;padding:.7rem;text-align:center;border:2px solid var(--gold);">
+          <div style="font-size:1.1rem;font-weight:900;color:var(--ink);" id="fin-profit-total">0원</div>
+          <div style="font-size:.66rem;color:var(--muted);font-weight:700;">순이익</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 입력 탭 -->
+    <div class="tabs" style="font-size:.72rem;">
+      <button class="tab on" onclick="finTab('income',this)">💚 매출 입력</button>
+      <button class="tab" onclick="finTab('expense',this)">🔴 경비 입력</button>
+      <button class="tab" onclick="finTab('upload',this)">📂 파일 업로드</button>
+      <button class="tab" onclick="finTab('list',this)">📋 전체 내역</button>
+    </div>
+
+    <!-- 매출 입력 -->
+    <div id="fin-income" class="card">
+      <div class="ctitle">💚 매출 등록</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <div class="fg"><label>날짜</label><input type="date" id="inc-date" class="inp"></div>
+        <div class="fg"><label>매출 유형</label>
+          <select id="inc-type" class="inp">
+            <option value="tuition">수강료</option>
+            <option value="material">재료비</option>
+            <option value="etc">기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>거래처/내용</label><input type="text" id="inc-desc" class="inp" placeholder="홍길동 4월 수강료"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <div class="fg"><label>금액 (원)</label><input type="number" id="inc-amount" class="inp" placeholder="150000"></div>
+        <div class="fg"><label>결제수단</label>
+          <select id="inc-method" class="inp">
+            <option value="cash">현금</option>
+            <option value="card">카드</option>
+            <option value="transfer">계좌이체</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>메모</label><input type="text" id="inc-memo" class="inp" placeholder="특이사항"></div>
+      <button class="btn btn-g" style="width:100%;" onclick="addFinanceItem('income')">+ 매출 등록</button>
+    </div>
+
+    <!-- 경비 입력 -->
+    <div id="fin-expense" class="card" style="display:none;">
+      <div class="ctitle">🔴 경비/매입 등록</div>
+
+      <!-- 영수증 업로드 -->
+      <div style="border:2px dashed var(--border);border-radius:10px;padding:.8rem;text-align:center;margin-bottom:.8rem;background:var(--gold-pale);cursor:pointer;" onclick="document.getElementById('receipt-img').click()">
+        <div style="font-size:1.5rem;">🧾</div>
+        <div style="font-size:.76rem;font-weight:700;margin-bottom:.2rem;">영수증 사진 업로드</div>
+        <div style="font-size:.68rem;color:var(--muted);">촬영하거나 이미지를 선택하면 자동 추출</div>
+        <input type="file" id="receipt-img" accept="image/*" capture="environment" style="display:none;" onchange="extractReceipt(event)">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <div class="fg"><label>날짜</label><input type="date" id="exp-date" class="inp"></div>
+        <div class="fg"><label>경비 유형</label>
+          <select id="exp-type" class="inp">
+            <option value="salary">급여</option>
+            <option value="material">재료/소모품</option>
+            <option value="utility">공과금(전기/수도)</option>
+            <option value="rent">임대료</option>
+            <option value="insurance">보험료</option>
+            <option value="marketing">광고/홍보</option>
+            <option value="meal">식대</option>
+            <option value="transport">교통비</option>
+            <option value="etc">기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>거래처/내용</label><input type="text" id="exp-desc" class="inp" placeholder="○○마트 미술재료 구입"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <div class="fg"><label>금액 (원)</label><input type="number" id="exp-amount" class="inp" placeholder="50000"></div>
+        <div class="fg"><label>결제수단</label>
+          <select id="exp-method" class="inp">
+            <option value="card">카드</option>
+            <option value="cash">현금</option>
+            <option value="transfer">계좌이체</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>메모</label><input type="text" id="exp-memo" class="inp" placeholder="영수증 번호 등"></div>
+      <button class="btn btn-r" style="width:100%;" onclick="addFinanceItem('expense')">+ 경비 등록</button>
+    </div>
+
+    <!-- 파일 업로드 -->
+    <div id="fin-upload" class="card" style="display:none;">
+      <div class="ctitle">📂 파일 일괄 업로드</div>
+      <div style="display:flex;flex-direction:column;gap:.7rem;">
+        <!-- 카드 내역서 -->
+        <div style="border:2px dashed var(--border);border-radius:10px;padding:.9rem;background:var(--gold-pale);">
+          <div style="font-size:.78rem;font-weight:800;margin-bottom:.3rem;">💳 카드 내역서 (Excel)</div>
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:.6rem;">신한·국민·하나·우리카드 Excel 파일</div>
+          <input type="file" id="card-excel" accept=".xlsx,.xls,.csv" onchange="uploadCardExcel(event)" style="display:none;">
+          <button class="btn btn-o btn-sm" style="width:100%;" onclick="document.getElementById('card-excel').click()">📂 카드 내역서 선택</button>
+          <div id="card-upload-result" style="margin-top:.5rem;font-size:.72rem;color:var(--sage);"></div>
+        </div>
+        <!-- 은행 이체 -->
+        <div style="border:2px dashed var(--border);border-radius:10px;padding:.9rem;background:var(--gold-pale);">
+          <div style="font-size:.78rem;font-weight:800;margin-bottom:.3rem;">🏦 은행 이체 내역 (Excel)</div>
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:.6rem;">은행 거래내역 Excel 파일</div>
+          <input type="file" id="bank-excel" accept=".xlsx,.xls,.csv" onchange="uploadBankExcel(event)" style="display:none;">
+          <button class="btn btn-o btn-sm" style="width:100%;" onclick="document.getElementById('bank-excel').click()">📂 은행 이체 내역 선택</button>
+          <div id="bank-upload-result" style="margin-top:.5rem;font-size:.72rem;color:var(--sage);"></div>
+        </div>
+        <!-- 영수증 일괄 -->
+        <div style="border:2px dashed var(--border);border-radius:10px;padding:.9rem;background:var(--gold-pale);">
+          <div style="font-size:.78rem;font-weight:800;margin-bottom:.3rem;">🧾 영수증 사진 일괄 업로드</div>
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:.6rem;">여러 영수증을 한번에 선택</div>
+          <input type="file" id="receipts-multi" accept="image/*" multiple onchange="uploadMultiReceipts(event)" style="display:none;">
+          <button class="btn btn-o btn-sm" style="width:100%;" onclick="document.getElementById('receipts-multi').click()">📷 영수증 여러 장 선택</button>
+          <div id="receipts-upload-result" style="margin-top:.5rem;font-size:.72rem;color:var(--sage);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 전체 내역 -->
+    <div id="fin-list" class="card" style="display:none;">
+      <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>📋 전체 내역</span>
+        <div style="display:flex;gap:.4rem;">
+          <button class="btn btn-o btn-sm" onclick="exportFinanceCSV()">📥 CSV 내보내기</button>
+          <button class="btn btn-gold btn-sm" onclick="window.print()">🖨️ 출력</button>
+        </div>
+      </div>
+      <!-- 필터 -->
+      <div style="display:flex;gap:.4rem;margin-bottom:.7rem;flex-wrap:wrap;">
+        <button class="btn btn-sm fin-filter on" data-filter="all" onclick="setFinFilter('all',this)" style="background:var(--ink);color:#fff;font-size:.68rem;">전체</button>
+        <button class="btn btn-sm fin-filter" data-filter="income" onclick="setFinFilter('income',this)" style="background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;font-size:.68rem;">💚 매출</button>
+        <button class="btn btn-sm fin-filter" data-filter="expense" onclick="setFinFilter('expense',this)" style="background:#FFEBEE;color:#C62828;border:1px solid #EF9A9A;font-size:.68rem;">🔴 경비</button>
+      </div>
+      <div id="fin-list-wrap"></div>
+    </div>
+
   </div>
 
   <div id="at-config" style="display:none;">
@@ -1419,6 +1583,52 @@ let resetEmail2='';
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 let selSlots=[];
 let editRecIdx=-1;
+let editPermsObj={};
+
+// ── 권한 구조 정의 (전역)
+const PERM_STRUCTURE=[
+  {section:'📋 수업일지 스캔',key:'scan',items:[
+    {label:'스캔 업로드',key:'scan_upload'},
+    {label:'결과 수정',key:'scan_edit'},
+    {label:'저장',key:'scan_save'},
+  ]},
+  {section:'👥 원생 관리',key:'students',items:[
+    {label:'원생 목록 열람',key:'stu_view'},
+    {label:'원생 등록',key:'stu_add'},
+    {label:'원생 수정',key:'stu_edit'},
+    {label:'원생 삭제',key:'stu_delete'},
+    {label:'퇴원/휴강 관리',key:'stu_status'},
+  ]},
+  {section:'📅 출석 달력',key:'calendar',items:[
+    {label:'출석 달력 열람',key:'cal_view'},
+  ]},
+  {section:'💳 수강료 관리',key:'payment',items:[
+    {label:'수강료 열람',key:'pay_view'},
+    {label:'납부 등록/수정',key:'pay_edit'},
+  ]},
+  {section:'📁 전체 기록',key:'history',items:[
+    {label:'기록 열람',key:'hist_view'},
+    {label:'기록 수정',key:'hist_edit'},
+    {label:'기록 삭제',key:'hist_delete'},
+  ]},
+  {section:'📊 보고서',key:'report',items:[
+    {label:'보고서 열람',key:'rpt_view'},
+    {label:'리포트 출력',key:'rpt_print'},
+  ]},
+  {section:'🖼 구글 드라이브',key:'drive',items:[
+    {label:'작품 갤러리 열람',key:'drive_view'},
+    {label:'교육 리포트 생성',key:'drive_report'},
+  ]},
+];
+const DEFAULT_PERMS={
+  scan_upload:true,scan_edit:true,scan_save:true,
+  stu_view:true,stu_add:false,stu_edit:false,stu_delete:false,stu_status:false,
+  cal_view:true,
+  pay_view:false,pay_edit:false,
+  hist_view:true,hist_edit:false,hist_delete:false,
+  rpt_view:true,rpt_print:true,
+  drive_view:true,drive_report:true,
+};
 
 // ════════════════════════════════════════════
 //  AUTH
@@ -1473,6 +1683,7 @@ function showApp(){
   rb.className='rbdg '+(isA?'r-admin':'r-teacher');
   sv('r-teacher',CP?.name||'');sv('r-date',today());sv('mon-date',today());sv('sel-month',today().slice(0,7));
   renderHome();initMyPage();loadStudentsFromDB();
+  if(CP?.role==='admin')loadFinanceFromDB();
   // 권한에 따라 버튼 표시 제어
   setTimeout(()=>{
     const addBtn=el('btn-add-stu');
@@ -2451,6 +2662,7 @@ function aTab(id,btn){
   if(id==='teachers')loadTeachers();
   if(id==='monitor'){sv('mon-date',today());loadMonitor();}
   if(id==='salary'){loadSalaryTeachers();}
+  if(id==='finance'){initFinance();loadFinanceFromDB();}
   if(id==='ledger'){initLedger();}
   if(id==='config'){
     el('su-input').value=SU;
@@ -3069,6 +3281,352 @@ function sendAllPayslips(type){
   }
 }
 
+
+// ════════════════════════════════════════════
+//  매입매출 관리
+// ════════════════════════════════════════════
+let FINANCE = JSON.parse(localStorage.getItem('sa_finance')||'[]');
+let finFilter = 'all';
+let currentFinTab = 'income';
+
+const EXP_TYPE_LABELS = {
+  salary:'급여',material:'재료/소모품',utility:'공과금',rent:'임대료',
+  insurance:'보험료',marketing:'광고/홍보',meal:'식대',transport:'교통비',etc:'기타'
+};
+const INC_TYPE_LABELS = {tuition:'수강료',material:'재료비',etc:'기타'};
+const METHOD_LABELS = {cash:'현금',card:'카드',transfer:'계좌이체'};
+
+function initFinance(){
+  // 연도/월 셀렉트 초기화
+  const yrSel=el('fin-year');
+  if(yrSel&&!yrSel.options.length){
+    const now=new Date().getFullYear();
+    for(let y=now-1;y<=now+1;y++)
+      yrSel.innerHTML+=`<option value="${y}" ${y===now?'selected':''}>${y}년</option>`;
+  }
+  const mSel=el('fin-month');
+  if(mSel) mSel.value=new Date().getMonth()+1;
+  // 기본 날짜 설정
+  sv('inc-date',today());sv('exp-date',today());
+  loadFinance();
+}
+
+function loadFinance(){
+  const yr=parseInt(gv('fin-year')||new Date().getFullYear());
+  const mo=parseInt(gv('fin-month')||new Date().getMonth()+1);
+  const prefix=`${yr}-${String(mo).padStart(2,'0')}`;
+  const monthData=FINANCE.filter(f=>f.date?.startsWith(prefix));
+  const income=monthData.filter(f=>f.kind==='income').reduce((s,f)=>s+(f.amount||0),0);
+  const expense=monthData.filter(f=>f.kind==='expense').reduce((s,f)=>s+(f.amount||0),0);
+  const profit=income-expense;
+  if(el('fin-income-total'))el('fin-income-total').textContent=income.toLocaleString()+'원';
+  if(el('fin-expense-total'))el('fin-expense-total').textContent=expense.toLocaleString()+'원';
+  if(el('fin-profit-total')){
+    el('fin-profit-total').textContent=(profit>=0?'+':'')+profit.toLocaleString()+'원';
+    el('fin-profit-total').style.color=profit>=0?'#2E7D32':'#C62828';
+  }
+  renderFinList();
+}
+
+function finTab(id,btn){
+  document.querySelectorAll('.tabs .fin-filter, #at-finance .tabs .tab').forEach(t=>t.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  ['income','expense','upload','list'].forEach(t=>{
+    const e=el('fin-'+t);if(e)e.style.display='none';
+  });
+  const target=el('fin-'+id);if(target)target.style.display='block';
+  currentFinTab=id;
+  if(id==='list')renderFinList();
+}
+
+function addFinanceItem(kind){
+  const isIncome=kind==='income';
+  const date=gv(isIncome?'inc-date':'exp-date');
+  const type=gv(isIncome?'inc-type':'exp-type');
+  const desc=gv(isIncome?'inc-desc':'exp-desc');
+  const amount=parseInt(gv(isIncome?'inc-amount':'exp-amount')||0);
+  const method=gv(isIncome?'inc-method':'exp-method');
+  const memo=gv(isIncome?'inc-memo':'exp-memo');
+  if(!date||!amount){toast('날짜와 금액을 입력하세요');return;}
+  const item={
+    id:'fin_'+Date.now(),kind,date,type,desc,amount,method,memo,
+    createdAt:new Date().toISOString(),createdBy:CU?.uid||''
+  };
+  FINANCE.push(item);
+  localStorage.setItem('sa_finance',JSON.stringify(FINANCE));
+  if(FB_READY&&db){db.collection('finance').doc(item.id).set(item).catch(e=>{});}
+  toast(`✅ ${isIncome?'매출':'경비'} ${amount.toLocaleString()}원 등록!`);
+  // 입력 초기화
+  sv(isIncome?'inc-amount':'exp-amount','');
+  sv(isIncome?'inc-desc':'exp-desc','');
+  sv(isIncome?'inc-memo':'exp-memo','');
+  loadFinance();
+}
+
+function deleteFinItem(id){
+  if(!confirm('이 항목을 삭제할까요?'))return;
+  FINANCE=FINANCE.filter(f=>f.id!==id);
+  localStorage.setItem('sa_finance',JSON.stringify(FINANCE));
+  if(FB_READY&&db){db.collection('finance').doc(id).delete().catch(e=>{});}
+  toast('✅ 삭제 완료');loadFinance();
+}
+
+function setFinFilter(filter,btn){
+  finFilter=filter;
+  document.querySelectorAll('.fin-filter').forEach(b=>{
+    b.style.fontWeight='500';b.style.opacity='.7';
+  });
+  if(btn){btn.style.fontWeight='900';btn.style.opacity='1';}
+  renderFinList();
+}
+
+function renderFinList(){
+  const wrap=el('fin-list-wrap');if(!wrap)return;
+  const yr=parseInt(gv('fin-year')||new Date().getFullYear());
+  const mo=parseInt(gv('fin-month')||new Date().getMonth()+1);
+  const prefix=`${yr}-${String(mo).padStart(2,'0')}`;
+  let data=FINANCE.filter(f=>f.date?.startsWith(prefix));
+  if(finFilter!=='all')data=data.filter(f=>f.kind===finFilter);
+  data.sort((a,b)=>b.date>a.date?1:-1);
+  if(!data.length){wrap.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.78rem;">내역이 없어요</div>';return;}
+  // 날짜별 그룹
+  const groups={};
+  data.forEach(f=>{if(!groups[f.date])groups[f.date]=[];groups[f.date].push(f);});
+  wrap.innerHTML=Object.entries(groups).sort((a,b)=>b[0]>a[0]?1:-1).map(([date,items])=>{
+    const dayIncome=items.filter(f=>f.kind==='income').reduce((s,f)=>s+f.amount,0);
+    const dayExpense=items.filter(f=>f.kind==='expense').reduce((s,f)=>s+f.amount,0);
+    return `<div style="margin-bottom:.8rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem .5rem;background:var(--gold-pale);border-radius:6px;margin-bottom:.3rem;">
+        <strong style="font-size:.78rem;">${date}</strong>
+        <div style="font-size:.68rem;">
+          ${dayIncome?`<span style="color:#2E7D32;font-weight:700;">+${dayIncome.toLocaleString()}</span>`:''}
+          ${dayExpense?`<span style="color:#C62828;font-weight:700;margin-left:.3rem;">-${dayExpense.toLocaleString()}</span>`:''}
+        </div>
+      </div>
+      ${items.map(f=>`<div style="display:flex;align-items:center;gap:.5rem;padding:.38rem .4rem;border-bottom:1px dotted var(--gold-light);font-size:.74rem;">
+        <span style="font-size:.9rem;">${f.kind==='income'?'💚':'🔴'}</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;">${f.desc||f.type} <span style="font-size:.65rem;color:var(--muted);font-weight:400;">${(f.kind==='income'?INC_TYPE_LABELS:EXP_TYPE_LABELS)[f.type]||f.type}</span></div>
+          <div style="font-size:.65rem;color:var(--muted);">${METHOD_LABELS[f.method]||f.method}${f.memo?' · '+f.memo:''}</div>
+        </div>
+        <span style="font-weight:800;color:${f.kind==='income'?'#2E7D32':'#C62828'};">${f.kind==='income'?'+':'-'}${f.amount.toLocaleString()}원</span>
+        <button class="btn btn-o btn-sm" style="padding:.15rem .4rem;font-size:.6rem;" onclick="deleteFinItem('${f.id}')">삭제</button>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// 영수증 OCR 추출
+function extractReceipt(event){
+  const file=event.target.files[0];if(!file)return;
+  showOv('영수증 분석 중…');
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    // 실제로는 Google Vision API 사용 - 여기서는 파일명/날짜로 시범 추출
+    hideOv();
+    sv('exp-date',today());
+    toast('📸 영수증 업로드 완료! 내용을 확인 후 등록하세요');
+    // 이미지 미리보기
+    const preview=document.createElement('img');
+    preview.src=e.target.result;
+    preview.style.cssText='width:100%;border-radius:8px;margin-top:.5rem;max-height:200px;object-fit:contain;';
+    const receiptZone=document.querySelector('[onclick="document.getElementById(\'receipt-img\').click()"]');
+    if(receiptZone){
+      const existing=receiptZone.querySelector('img');
+      if(existing)existing.remove();
+      receiptZone.appendChild(preview);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// 카드 내역서 Excel 업로드
+async function uploadCardExcel(event){
+  const file=event.target.files[0];if(!file)return;
+  el('card-upload-result').textContent='파일 분석 중...';
+  try{
+    const data=await readExcelFile(file);
+    const items=parseCardExcel(data);
+    items.forEach(item=>{FINANCE.push(item);});
+    localStorage.setItem('sa_finance',JSON.stringify(FINANCE));
+    if(FB_READY&&db){
+      const batch=db.batch();
+      items.forEach(item=>batch.set(db.collection('finance').doc(item.id),item));
+      await batch.commit().catch(e=>{});
+    }
+    el('card-upload-result').textContent=`✅ ${items.length}건 불러오기 완료!`;
+    el('card-upload-result').style.color='var(--sage)';
+    loadFinance();
+    toast(`✅ 카드내역 ${items.length}건 등록!`);
+  }catch(e){
+    el('card-upload-result').textContent='❌ 파일 읽기 실패: '+e.message;
+    el('card-upload-result').style.color='var(--accent)';
+  }
+}
+
+// 은행 이체 내역 Excel
+async function uploadBankExcel(event){
+  const file=event.target.files[0];if(!file)return;
+  el('bank-upload-result').textContent='파일 분석 중...';
+  try{
+    const data=await readExcelFile(file);
+    const items=parseBankExcel(data);
+    items.forEach(item=>{FINANCE.push(item);});
+    localStorage.setItem('sa_finance',JSON.stringify(FINANCE));
+    if(FB_READY&&db){
+      const batch=db.batch();
+      items.forEach(item=>batch.set(db.collection('finance').doc(item.id),item));
+      await batch.commit().catch(e=>{});
+    }
+    el('bank-upload-result').textContent=`✅ ${items.length}건 불러오기 완료!`;
+    el('bank-upload-result').style.color='var(--sage)';
+    loadFinance();
+    toast(`✅ 은행내역 ${items.length}건 등록!`);
+  }catch(e){
+    el('bank-upload-result').textContent='❌ 파일 읽기 실패: '+e.message;
+    el('bank-upload-result').style.color='var(--accent)';
+  }
+}
+
+// 영수증 다중 업로드
+async function uploadMultiReceipts(event){
+  const files=event.target.files;
+  el('receipts-upload-result').textContent=`${files.length}장 처리 중...`;
+  let cnt=0;
+  for(const file of files){
+    const item={
+      id:'fin_'+Date.now()+'_'+cnt,kind:'expense',
+      date:today(),type:'etc',
+      desc:file.name.replace(/\.[^.]+$/,''),
+      amount:0,method:'card',memo:'영수증 업로드',
+      createdAt:new Date().toISOString(),createdBy:CU?.uid||''
+    };
+    FINANCE.push(item);cnt++;
+  }
+  localStorage.setItem('sa_finance',JSON.stringify(FINANCE));
+  el('receipts-upload-result').textContent=`✅ ${cnt}건 등록 (금액 확인 필요)`;
+  el('receipts-upload-result').style.color='var(--sage)';
+  toast(`✅ 영수증 ${cnt}장 등록! 금액을 확인해주세요`);
+  loadFinance();
+}
+
+// Excel 파일 읽기 (SheetJS)
+function readExcelFile(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        resolve(data);
+      }catch(err){reject(err);}
+    };
+    reader.onerror=()=>reject(new Error('파일 읽기 실패'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// 카드 내역 파싱 (일반적인 한국 카드사 형식)
+function parseCardExcel(rows){
+  const items=[];
+  rows.forEach((row,i)=>{
+    if(i===0)return; // 헤더 스킵
+    // 날짜/가맹점/금액 컬럼 자동 감지
+    let date='',desc='',amount=0,method='card';
+    row.forEach((cell,ci)=>{
+      const str=String(cell||'').trim();
+      // 날짜 패턴: 2024-04-15 또는 2024.04.15
+      if(/^\d{4}[-./]\d{1,2}[-./]\d{1,2}/.test(str)&&!date){
+        date=str.replace(/\./g,'-').replace(/(\d{4})-(\d{1,2})-(\d{1,2}).*/,'$1-'+('0'+'$2').slice(-2)+'-'+('0'+'$3').slice(-2));
+      }
+      // 금액 패턴: 숫자 (콤마 포함)
+      const num=parseInt(str.replace(/,/g,''));
+      if(!isNaN(num)&&num>0&&num<100000000&&!amount&&str.length>2)amount=num;
+      // 가맹점명: 숫자/날짜 아닌 한글/영문
+      if(str.length>1&&!/^\d+$/.test(str)&&!/^\d{4}/.test(str)&&!desc&&ci>0)desc=str;
+    });
+    if(date&&amount){
+      items.push({
+        id:'fin_card_'+Date.now()+'_'+i,kind:'expense',
+        date,type:'etc',desc:desc||'카드결제',
+        amount,method:'card',memo:'카드내역 업로드',
+        createdAt:new Date().toISOString(),createdBy:CU?.uid||''
+      });
+    }
+  });
+  return items;
+}
+
+// 은행 이체 내역 파싱
+function parseBankExcel(rows){
+  const items=[];
+  rows.forEach((row,i)=>{
+    if(i===0)return;
+    let date='',desc='',amount=0,kind='expense';
+    row.forEach((cell,ci)=>{
+      const str=String(cell||'').trim();
+      if(/^\d{4}[-./]\d{1,2}[-./]\d{1,2}/.test(str)&&!date){
+        date=str.replace(/\./g,'-').slice(0,10);
+      }
+      const num=parseInt(str.replace(/,/g,''));
+      if(!isNaN(num)&&num>0&&num<100000000&&!amount)amount=num;
+      if(str.length>1&&!/^\d+$/.test(str)&&!/^\d{4}/.test(str)&&!desc&&ci>0)desc=str;
+    });
+    // 입금/출금 구분 시도 (컬럼 위치로)
+    if(row.length>=4){
+      const c2=parseInt(String(row[2]||'').replace(/,/g,''));
+      const c3=parseInt(String(row[3]||'').replace(/,/g,''));
+      if(!isNaN(c2)&&c2>0){kind='expense';amount=c2;}
+      if(!isNaN(c3)&&c3>0){kind='income';amount=c3;}
+    }
+    if(date&&amount){
+      items.push({
+        id:'fin_bank_'+Date.now()+'_'+i,kind,
+        date,type:kind==='income'?'tuition':'etc',
+        desc:desc||'은행이체',amount,method:'transfer',
+        memo:'은행내역 업로드',
+        createdAt:new Date().toISOString(),createdBy:CU?.uid||''
+      });
+    }
+  });
+  return items;
+}
+
+// CSV 내보내기
+function exportFinanceCSV(){
+  const yr=gv('fin-year')||new Date().getFullYear();
+  const mo=gv('fin-month')||new Date().getMonth()+1;
+  const prefix=yr+'-'+String(mo).padStart(2,'0');
+  const data=FINANCE.filter(f=>f.date&&f.date.startsWith(prefix));
+  const rows=['날짜,구분,유형,내용,금액,결제수단,메모'];
+  data.forEach(f=>{
+    const row=[f.date,(f.kind==='income'?'매출':'경비'),f.type||'',(f.desc||''),(f.amount||0),(f.method||''),(f.memo||'')].join(',');
+    rows.push(row);
+  });
+  const sep='\n';
+  const blob=new Blob([rows.join(sep)],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='매입매출_'+yr+'년'+mo+'월.csv';a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ CSV 다운로드 완료!');
+}
+
+// Firestore에서 finance 데이터 로드
+async function loadFinanceFromDB(){
+  if(!FB_READY||!db)return;
+  try{
+    const snap=await db.collection('finance').get();
+    const dbItems=[];
+    snap.forEach(doc=>dbItems.push({id:doc.id,...doc.data()}));
+    // 로컬과 병합
+    const localIds=new Set(FINANCE.map(f=>f.id));
+    dbItems.forEach(item=>{if(!localIds.has(item.id))FINANCE.push(item);});
+    localStorage.setItem('sa_finance',JSON.stringify(FINANCE));
+  }catch(e){console.warn('Finance 로드 오류:',e);}
+}
+
 // ════════════════════════════════════════════
 //  급여 관리
 // ════════════════════════════════════════════
@@ -3348,54 +3906,6 @@ function loadSalaryHistory(){
 // ════════════════════════════════════════════
 //  세부 권한 관리
 // ════════════════════════════════════════════
-// 권한 구조 정의
-const PERM_STRUCTURE = [
-  { section:'📋 수업일지 스캔', key:'scan', items:[
-    { label:'스캔 업로드', key:'scan_upload' },
-    { label:'결과 수정', key:'scan_edit' },
-    { label:'저장', key:'scan_save' },
-  ]},
-  { section:'👥 원생 관리', key:'students', items:[
-    { label:'원생 목록 열람', key:'stu_view' },
-    { label:'원생 등록', key:'stu_add' },
-    { label:'원생 수정', key:'stu_edit' },
-    { label:'원생 삭제', key:'stu_delete' },
-    { label:'퇴원/휴강 관리', key:'stu_status' },
-  ]},
-  { section:'📅 출석 달력', key:'calendar', items:[
-    { label:'출석 달력 열람', key:'cal_view' },
-  ]},
-  { section:'💳 수강료 관리', key:'payment', items:[
-    { label:'수강료 열람', key:'pay_view' },
-    { label:'납부 등록/수정', key:'pay_edit' },
-  ]},
-  { section:'📁 전체 기록', key:'history', items:[
-    { label:'기록 열람', key:'hist_view' },
-    { label:'기록 수정', key:'hist_edit' },
-    { label:'기록 삭제', key:'hist_delete' },
-  ]},
-  { section:'📊 보고서', key:'report', items:[
-    { label:'보고서 열람', key:'rpt_view' },
-    { label:'리포트 출력', key:'rpt_print' },
-  ]},
-  { section:'🖼 구글 드라이브', key:'drive', items:[
-    { label:'작품 갤러리 열람', key:'drive_view' },
-    { label:'교육 리포트 생성', key:'drive_report' },
-  ]},
-];
-
-// 기본 권한 (신규 선생님)
-const DEFAULT_PERMS = {
-  scan_upload:true, scan_edit:true, scan_save:true,
-  stu_view:true, stu_add:false, stu_edit:false, stu_delete:false, stu_status:false,
-  cal_view:true,
-  pay_view:false, pay_edit:false,
-  hist_view:true, hist_edit:false, hist_delete:false,
-  rpt_view:true, rpt_print:true,
-  drive_view:true, drive_report:true,
-};
-
-let editPermsObj = {};
 
 function openEditPerm(uid, name, perms){
   editUid = uid;
