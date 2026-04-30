@@ -390,7 +390,12 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 @media(min-width:1024px){
   .content-area{align-items:center !important;}
   #main-app .page{width:min(100%,720px) !important;max-width:720px !important;}
-}</style>
+}
+.stu-photo-pick{display:flex;align-items:center;gap:.8rem;padding:.7rem;border:2px dashed var(--gold-light);border-radius:10px;background:var(--gold-pale);}
+.stu-photo-prev{width:72px;height:96px;border-radius:8px;border:2px solid var(--gold);background:#fff;object-fit:cover;display:none;flex-shrink:0;}
+.stu-photo-empty{width:72px;height:96px;border-radius:8px;border:2px solid var(--gold-light);background:#fff;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.72rem;font-weight:800;flex-shrink:0;}
+.stu-av.has-photo{background:#fff !important;border-color:var(--gold);overflow:hidden;}
+.stu-av.has-photo img{width:100%;height:100%;object-fit:cover;display:block;}</style>
   <!-- SheetJS for Excel parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Google Identity Services -->
@@ -597,8 +602,10 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
       <button class="btn btn-sm stu-filter" data-filter="out" onclick="setStuFilter('out',this)"
         style="white-space:nowrap;background:#ffebee;color:#c62828;border:1px solid #ef9a9a;">퇴원 <span id="cnt-out"></span></button>
     </div>
-    <div style="margin-bottom:.8rem;display:flex;gap:.5rem;">
+    <div style="margin-bottom:.8rem;display:flex;gap:.5rem;align-items:center;">
       <input id="stu-q" class="inp" style="flex:1;" placeholder="🔍 원생 이름 검색" oninput="renderStudents()">
+      <button class="btn btn-gold btn-sm" onclick="document.getElementById('stu-excel-upload').click()">엑셀 업로드</button>
+      <input type="file" id="stu-excel-upload" accept=".xlsx,.xls,.csv" style="display:none;" onchange="uploadStudentsExcel(event)">
       <button class="btn btn-b btn-sm" id="btn-add-stu" onclick="openAddStu()">+ 등록</button>
     </div>
     <div id="stu-list-wrap"></div>
@@ -1275,6 +1282,20 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   <div class="modal">
     <h3 id="stu-modal-title">원생 등록</h3>
     <input type="hidden" id="stu-edit-id">
+    <input type="hidden" id="stu-photo-data">
+    <div class="fg">
+      <label>원생 사진</label>
+      <div class="stu-photo-pick">
+        <img id="stu-photo-preview" class="stu-photo-prev" alt="원생 사진 미리보기">
+        <div id="stu-photo-empty" class="stu-photo-empty">사진</div>
+        <div style="flex:1;">
+          <button type="button" class="btn btn-gold btn-sm" onclick="document.getElementById('stu-photo-input').click()">이미지 업로드</button>
+          <button type="button" class="btn btn-o btn-sm" onclick="clearStuPhoto()">삭제</button>
+          <input type="file" id="stu-photo-input" accept="image/*" style="display:none;" onchange="handleStuPhoto(event)">
+          <div style="font-size:.67rem;color:var(--muted);margin-top:.35rem;line-height:1.5;">큰 이미지도 이력서용 3:4 크기로 줄여 저장합니다.</div>
+        </div>
+      </div>
+    </div>
     <div class="fg"><label>이름 *</label><input type="text" id="stu-name" class="inp" placeholder="홍길동"></div>
     <div style="display:flex;gap:.5rem;">
       <div class="fg" style="flex:1;"><label>성별</label>
@@ -1868,12 +1889,82 @@ function updStuSelects(){
   });
 }
 
+function setStuPhotoPreview(data){
+  currentStuPhoto=data||'';
+  sv('stu-photo-data',currentStuPhoto);
+  const img=el('stu-photo-preview'),empty=el('stu-photo-empty');
+  if(img)img.style.display=currentStuPhoto?'block':'none';
+  if(empty)empty.style.display=currentStuPhoto?'none':'flex';
+  if(img&&currentStuPhoto)img.src=currentStuPhoto;
+}
+function clearStuPhoto(){setStuPhotoPreview('');const input=el('stu-photo-input');if(input)input.value='';}
+function resizeImageToResume(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const targetW=240,targetH=320;
+        const canvas=document.createElement('canvas');canvas.width=targetW;canvas.height=targetH;
+        const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,targetW,targetH);
+        const srcRatio=img.width/img.height,targetRatio=targetW/targetH;
+        let sx=0,sy=0,sw=img.width,sh=img.height;
+        if(srcRatio>targetRatio){sw=img.height*targetRatio;sx=(img.width-sw)/2;}else{sh=img.width/targetRatio;sy=(img.height-sh)/2;}
+        ctx.drawImage(img,sx,sy,sw,sh,0,0,targetW,targetH);
+        resolve(canvas.toDataURL('image/jpeg',0.72));
+      };
+      img.onerror=()=>reject(new Error('이미지를 읽을 수 없어요'));
+      img.src=e.target.result;
+    };
+    reader.onerror=()=>reject(new Error('파일 읽기 실패'));
+    reader.readAsDataURL(file);
+  });
+}
+async function handleStuPhoto(event){
+  const file=event.target.files[0];if(!file)return;
+  try{showOv('사진 줄이는 중…');setStuPhotoPreview(await resizeImageToResume(file));toast('사진을 이력서용 크기로 줄였어요');}
+  catch(e){toast('사진 처리 오류: '+e.message);}hideOv();
+}
+function normalizeStudentRow(row,headers){
+  const pick=(names)=>{for(const n of names){const idx=headers.findIndex(h=>h.includes(n));if(idx>=0&&row[idx]!==undefined&&String(row[idx]).trim()!=='')return String(row[idx]).trim();}return '';};
+  const name=pick(['이름','성명','원생명','학생명','name']);if(!name)return null;
+  const slotsText=pick(['수강시간','시간대','수업시간','요일','시간']);
+  const slots=slotsText?slotsText.split(/[,.\/\n·]+/).map(s=>s.trim()).filter(Boolean):[];
+  return {name,gender:pick(['성별']),age:pick(['나이','연령']),grade:pick(['학년']),school:pick(['학교']),addr:pick(['주소']),phone:pick(['연락처','전화','휴대폰','보호자']),slots,feeType:pick(['수강유형','유형','횟수']),sibling:pick(['형제'])||'0',fee:pick(['수강료','월수강료','금액']),regdate:pick(['등록일','입원일'])||today(),memo:pick(['메모','비고','특이사항']),driveId:pick(['드라이브','폴더']),updatedAt:new Date().toISOString(),createdAt:new Date().toISOString()};
+}
+async function uploadStudentsExcel(event){
+  const file=event.target.files[0];if(!file)return;
+  showOv('원생 목록 불러오는 중…');
+  try{
+    const rows=await readExcelFile(file);
+    if(!rows||rows.length<2){toast('엑셀에 등록할 원생이 없어요');hideOv();return;}
+    const headers=rows[0].map(h=>String(h||'').trim().toLowerCase());
+    const parsed=rows.slice(1).map(r=>normalizeStudentRow(r,headers)).filter(Boolean);
+    if(!parsed.length){toast('이름 컬럼을 찾지 못했어요');hideOv();return;}
+    let added=0,updated=0;
+    if(FB_READY&&db){
+      const batch=db.batch();
+      parsed.forEach(stu=>{
+        const existing=STUS.find(s=>s.name===stu.name&&(String(s.phone||'')===String(stu.phone||'')||!stu.phone));
+        if(existing){batch.set(db.collection('students').doc(existing.id),stu,{merge:true});Object.assign(existing,stu);updated++;}
+        else{const ref=db.collection('students').doc();batch.set(ref,stu);STUS.push({id:ref.id,...stu});added++;}
+      });
+      await batch.commit();
+    }else{
+      parsed.forEach(stu=>{
+        const existing=STUS.find(s=>s.name===stu.name&&(String(s.phone||'')===String(stu.phone||'')||!stu.phone));
+        if(existing){Object.assign(existing,stu);updated++;}else{STUS.push({id:'s'+Date.now()+'_'+added,...stu});added++;}
+      });
+    }
+    localStorage.setItem('sa_stus',JSON.stringify(STUS));renderStudents();updStuSelects();toast(`엑셀 등록 완료: 추가 ${added}명, 수정 ${updated}명`);
+  }catch(e){toast('엑셀 업로드 오류: '+e.message);}event.target.value='';hideOv();
+}
 function openAddStu(){
   el('stu-modal-title').textContent='원생 등록';
   sv('stu-edit-id','');sv('stu-name','');sv('stu-phone','');sv('stu-fee',CFG.fee||'');
   sv('stu-regdate',today());sv('stu-memo','');
   selSlots=[];
-  sv('stu-type','');sv('stu-sibling','0');sv('stu-gender','');sv('stu-age','');sv('stu-grade','');sv('stu-school','');sv('stu-addr','');sv('stu-drive-id','');
+  sv('stu-type','');sv('stu-sibling','0');sv('stu-gender','');sv('stu-age','');sv('stu-grade','');sv('stu-school','');sv('stu-addr','');sv('stu-drive-id','');setStuPhotoPreview('');
   if(el('stu-fee-badge'))el('stu-fee-badge').textContent='';
   document.querySelectorAll('#stu-slots-wrap .perm-btn').forEach(b=>b.classList.remove('on'));
   el('modal-stu').classList.add('show');
@@ -1884,7 +1975,7 @@ function openEditStu(id){
   el('stu-modal-title').textContent='원생 수정';
   sv('stu-edit-id',id);sv('stu-name',s.name||'');sv('stu-phone',s.phone||'');
   sv('stu-fee',s.fee||'');sv('stu-regdate',s.regdate||today());sv('stu-memo',s.memo||'');
-  sv('stu-type',s.feeType||'');sv('stu-sibling',s.sibling||'0');sv('stu-gender',s.gender||'');sv('stu-age',s.age||'');sv('stu-grade',s.grade||'');sv('stu-school',s.school||'');sv('stu-addr',s.addr||'');sv('stu-drive-id',s.driveId||'');
+  sv('stu-type',s.feeType||'');sv('stu-sibling',s.sibling||'0');sv('stu-gender',s.gender||'');sv('stu-age',s.age||'');sv('stu-grade',s.grade||'');sv('stu-school',s.school||'');sv('stu-addr',s.addr||'');sv('stu-drive-id',s.driveId||'');setStuPhotoPreview(s.photo||'');
   if(el('stu-fee-badge'))el('stu-fee-badge').textContent=s.feeType?getFeeLabel(s.feeType,s.sibling):'';
   selSlots=[...(s.slots||[])];
   document.querySelectorAll('#stu-slots-wrap .perm-btn').forEach(b=>{
@@ -1903,7 +1994,7 @@ async function saveStu(){
   const name=gv('stu-name').trim();
   if(!name){toast('이름을 입력하세요');return;}
   const feeType=gv('stu-type');const sibling=gv('stu-sibling');
-  const data={name,gender:gv('stu-gender'),age:gv('stu-age'),grade:gv('stu-grade'),school:gv('stu-school'),addr:gv('stu-addr'),phone:gv('stu-phone'),slots:selSlots,feeType,sibling,fee:gv('stu-fee'),regdate:gv('stu-regdate'),memo:gv('stu-memo'),driveId:gv('stu-drive-id'),updatedAt:new Date().toISOString()};
+  const data={name,gender:gv('stu-gender'),age:gv('stu-age'),grade:gv('stu-grade'),school:gv('stu-school'),addr:gv('stu-addr'),phone:gv('stu-phone'),slots:selSlots,feeType,sibling,fee:gv('stu-fee'),regdate:gv('stu-regdate'),memo:gv('stu-memo'),driveId:gv('stu-drive-id'),photo:currentStuPhoto,updatedAt:new Date().toISOString()};
   showOv('저장 중…');
   try{
     const editId=gv('stu-edit-id');
@@ -1968,7 +2059,7 @@ function renderStudents(){
     const rate=tot?Math.round(pr/tot*100):null;
     return `<div class="stu-card">
       <div class="stu-hd">
-        <div class="stu-av" style="${s.status==='out'?'background:var(--red);opacity:.6':s.status==='pause'?'background:var(--gold)':''}">${(s.name||'?')[0]}</div>
+        <div class="stu-av ${s.photo?'has-photo':''}" style="${!s.photo&&(s.status==='out'?'background:var(--red);opacity:.6':s.status==='pause'?'background:var(--gold)':'')}">${s.photo?`<img src="${s.photo}" alt="${s.name||'원생'}">`:(s.name||'?')[0]}</div>
         <div class="stu-info">
           <h4>${s.name||'이름없음'} ${s.status==='out'?'<span class=\"status-badge status-out\">퇴원</span>':s.status==='pause'?'<span class=\"status-badge status-pause\">휴강중</span>':'<span class=\"status-badge status-active\">수강중</span>'}</h4>
           <p>${[s.gender,s.grade,s.school].filter(Boolean).join(' · ')||'정보 없음'}</p>
