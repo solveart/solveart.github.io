@@ -590,7 +590,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <select id="pay-year" class="inp" style="width:80px;" onchange="renderPay()"></select>
         <span style="font-size:.75rem;color:var(--muted);">연도 선택</span>
-        <span id="pay-summary" style="font-size:.75rem;font-weight:700;color:var(--accent);"></span>
+        <span id="pay-summary" style="font-size:.75rem;font-weight:700;"></span>
       </div>
     </div>
     <div id="pay-list"></div>
@@ -1416,7 +1416,22 @@ function renderPay(){
   let unpaidCnt=0;
   let totalExpected=0,totalPaid=0;
   const curMonth=new Date().getMonth()+1;
+  const curYr=new Date().getFullYear();
   const activeStus2=STUS.filter(s=>!s.status||s.status==='active');
+  // 먼저 현재 달 미납 카운트 계산
+  activeStus2.forEach(s=>{
+    const p=JSON.parse(localStorage.getItem('pay_'+s.id+'_'+curYr)||'{}');
+    if(!p[curMonth])unpaidCnt++;
+  });
+  // 즉시 summary 업데이트
+  const paidCntInit=activeStus2.length-unpaidCnt;
+  if(el('pay-summary')){
+    el('pay-summary').innerHTML=
+      '<span style="color:var(--sage);font-weight:800;">납부 '+paidCntInit+'명</span>'
+      +' <span style="color:var(--muted);">·</span> '
+      +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
+  }
+  unpaidCnt=0; // 리셋 후 카드 렌더링에서 재계산
   wrap.innerHTML=STUS.map(s=>{
     const pays=JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`)||'{}');
     const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -1440,11 +1455,19 @@ function renderPay(){
       </div>
     </div>`;
   }).join('');
-  const paidCnt=activeStus2.length-unpaidCnt;
-  el('pay-summary').innerHTML=
-    '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt+'명</span>'
-    +' <span style="color:var(--muted);">·</span> '
-    +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
+  // 현재 달 기준으로 정확히 재계산
+  let finalUnpaid=0;
+  activeStus2.forEach(s=>{
+    const p2=JSON.parse(localStorage.getItem('pay_'+s.id+'_'+curYr)||'{}');
+    if(!p2[curMonth])finalUnpaid++;
+  });
+  const paidCnt=activeStus2.length-finalUnpaid;
+  if(el('pay-summary')){
+    el('pay-summary').innerHTML=
+      '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt+'명</span>'
+      +' <span style="color:var(--muted);">·</span> '
+      +'<span style="color:var(--accent);font-weight:800;">미납 '+finalUnpaid+'명</span>';
+  }
   // 연도 셀렉트
   const yEl=el('pay-year');if(!yEl.options.length){
     const now=new Date().getFullYear();
@@ -1461,16 +1484,19 @@ function togglePay(stuId,year,month,btn){
   // 미납 카운트 갱신 — 현재 달 기준으로만 계산
   const curMonth=new Date().getMonth()+1;
   const curYear=new Date().getFullYear();
+  const activeOnly=STUS.filter(s=>!s.status||s.status==='active');
   let unpaidCnt=0;
-  STUS.forEach(s=>{
-    const p=JSON.parse(localStorage.getItem(`pay_${s.id}_${curYear}`)||'{}');
+  activeOnly.forEach(s=>{
+    const p=JSON.parse(localStorage.getItem('pay_'+s.id+'_'+curYear)||'{}');
     if(!p[curMonth]) unpaidCnt++;
   });
-  const paidCnt2=STUS.filter(s=>!s.status||s.status==='active').length - unpaidCnt;
-  el('pay-summary').innerHTML=
-    '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt2+'명</span>'
-    +' <span style="color:var(--muted);">·</span> '
-    +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
+  const paidCnt2=activeOnly.length-unpaidCnt;
+  if(el('pay-summary')){
+    el('pay-summary').innerHTML=
+      '<span style="color:var(--sage);font-weight:800;">납부 '+paidCnt2+'명</span>'
+      +' <span style="color:var(--muted);">·</span> '
+      +'<span style="color:var(--accent);font-weight:800;">미납 '+unpaidCnt+'명</span>';
+  }
 }
 
 // ════════════════════════════════════════════
