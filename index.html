@@ -20,6 +20,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--gold-pale);color:var
 
 /* ── 로그인 ── */
 #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;background:var(--gold);}
+#pw-reset-overlay.show{display:flex!important;}
 .login-box{background:#fff;border-radius:20px;padding:2.2rem 2rem;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.18),0 0 0 4px rgba(255,255,255,.5);}
 .login-logo{text-align:center;margin-bottom:1.8rem;}
 .login-logo img{width:140px;height:auto;object-fit:contain;margin-bottom:.6rem;}
@@ -404,7 +405,62 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
       <input type="password" id="lp" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="login-btn" onclick="doLogin()">로그인</button>
     <div class="login-err" id="lerr"></div>
+    <div style="text-align:center;margin-top:.6rem;">
+      <button onclick="openPwReset()" style="background:none;border:none;color:var(--muted);font-size:.72rem;cursor:pointer;text-decoration:underline;font-family:inherit;">
+        🔑 비밀번호를 잊으셨나요?
+      </button>
+    </div>
     <div class="login-ver">Firebase 보안 로그인 · 솔브아트 관리 시스템 v3.0</div>
+  </div>
+</div>
+
+<!-- 비밀번호 재설정 모달 -->
+<div id="pw-reset-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#fff;border-radius:20px;padding:1.8rem 1.6rem;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.3);">
+    <!-- 헤더 -->
+    <div style="text-align:center;margin-bottom:1.2rem;">
+      <div style="font-size:2.5rem;margin-bottom:.4rem;">🔑</div>
+      <div style="font-size:1.1rem;font-weight:900;color:#1a1a1a;margin-bottom:.3rem;">비밀번호 재설정</div>
+      <div style="font-size:.76rem;color:#888;line-height:1.5;">가입한 이메일을 입력하시면<br>비밀번호 재설정 링크를 보내드려요</div>
+    </div>
+
+    <!-- 입력 -->
+    <div id="pw-reset-form">
+      <div style="margin-bottom:.8rem;">
+        <label style="font-size:.75rem;font-weight:700;color:#555;display:block;margin-bottom:.3rem;">이메일</label>
+        <input type="email" id="pw-reset-email" placeholder="email@example.com"
+          style="width:100%;padding:.7rem .9rem;border:2px solid #FFE082;border-radius:10px;font-size:.9rem;outline:none;font-family:inherit;"
+          onkeydown="if(event.key==='Enter')sendPwReset()">
+      </div>
+      <div id="pw-reset-msg" style="font-size:.75rem;text-align:center;min-height:1.2rem;margin-bottom:.5rem;"></div>
+      <button onclick="sendPwReset()"
+        style="width:100%;padding:.82rem;background:#1a1a1a;color:#FFC800;border:none;border-radius:10px;font-size:1rem;font-weight:900;cursor:pointer;font-family:inherit;margin-bottom:.5rem;">
+        📧 재설정 링크 전송
+      </button>
+      <button onclick="closePwReset()"
+        style="width:100%;padding:.7rem;background:transparent;color:#888;border:1.5px solid #ddd;border-radius:10px;font-size:.85rem;cursor:pointer;font-family:inherit;">
+        취소
+      </button>
+    </div>
+
+    <!-- 전송 완료 상태 -->
+    <div id="pw-reset-done" style="display:none;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:.8rem;">📬</div>
+      <div style="font-size:1rem;font-weight:900;color:#1a1a1a;margin-bottom:.5rem;">이메일 전송 완료!</div>
+      <div style="font-size:.78rem;color:#555;line-height:1.6;margin-bottom:1.2rem;" id="pw-reset-done-msg"></div>
+      <div style="background:#FFF8E1;border:1.5px solid #FFE082;border-radius:10px;padding:.8rem;margin-bottom:1rem;font-size:.73rem;color:#555;text-align:left;">
+        <div style="font-weight:800;color:#1a1a1a;margin-bottom:.4rem;">📋 다음 순서로 진행하세요</div>
+        <div>1. 이메일 받은편지함을 확인하세요</div>
+        <div>2. "Reset your password" 메일 클릭</div>
+        <div>3. 새 비밀번호 설정</div>
+        <div>4. 이 앱으로 돌아와 로그인</div>
+        <div style="margin-top:.4rem;color:#E65100;">📌 스팸함도 확인해 주세요!</div>
+      </div>
+      <button onclick="closePwReset()"
+        style="width:100%;padding:.8rem;background:#1a1a1a;color:#FFC800;border:none;border-radius:10px;font-size:.95rem;font-weight:900;cursor:pointer;font-family:inherit;">
+        확인
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2166,6 +2222,57 @@ async function loadProfile(uid){
     if(!doc.exists)await db.collection('users').doc(uid).set(CP);
   }catch(e){CP={name:CU?.email||'사용자',role:'teacher',perms:{input:true,view:true,report:true}};}
 }
+
+function openPwReset(){
+  const emailInput = el('login-email');
+  const resetEmailEl = el('pw-reset-email');
+  if(resetEmailEl && emailInput) resetEmailEl.value = emailInput.value || '';
+  const overlay = el('pw-reset-overlay');
+  if(overlay){ overlay.style.display='flex'; overlay.classList.add('show'); }
+  el('pw-reset-form').style.display='block';
+  el('pw-reset-done').style.display='none';
+  const msgEl = el('pw-reset-msg');
+  if(msgEl) msgEl.textContent='';
+}
+
+function closePwReset(){
+  const overlay = el('pw-reset-overlay');
+  if(overlay){ overlay.style.display='none'; overlay.classList.remove('show'); }
+}
+
+async function sendPwReset(){
+  const email = el('pw-reset-email')?.value?.trim();
+  const msgEl = el('pw-reset-msg');
+  if(!email){
+    if(msgEl){ msgEl.textContent='이메일을 입력해 주세요'; msgEl.style.color='#C62828'; }
+    return;
+  }
+  if(!email.includes('@')){
+    if(msgEl){ msgEl.textContent='올바른 이메일 형식이 아니에요'; msgEl.style.color='#C62828'; }
+    return;
+  }
+  if(msgEl){ msgEl.textContent='전송 중...'; msgEl.style.color='#888'; }
+  try{
+    await firebase.auth().sendPasswordResetEmail(email);
+    // 성공
+    el('pw-reset-form').style.display='none';
+    el('pw-reset-done').style.display='block';
+    const doneMsg = el('pw-reset-done-msg');
+    if(doneMsg) doneMsg.textContent=email+' 으로\n재설정 링크를 전송했어요.';
+  }catch(err){
+    let errMsg = '전송에 실패했어요. 다시 시도해 주세요.';
+    if(err.code==='auth/user-not-found') errMsg='등록되지 않은 이메일이에요.';
+    else if(err.code==='auth/invalid-email') errMsg='이메일 형식이 올바르지 않아요.';
+    else if(err.code==='auth/too-many-requests') errMsg='너무 많이 시도했어요. 잠시 후 다시 시도해 주세요.';
+    if(msgEl){ msgEl.textContent=errMsg; msgEl.style.color='#C62828'; }
+  }
+}
+
+// 오버레이 바깥 클릭 시 닫기
+document.addEventListener('click', function(e){
+  const overlay = el('pw-reset-overlay');
+  if(overlay && e.target === overlay) closePwReset();
+});
 
 async function doLogin(){
   const id=gv('li').trim(),pw=gv('lp');
@@ -6046,6 +6153,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--gold-pale);color:var
 
 /* ── 로그인 ── */
 #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;background:var(--gold);}
+#pw-reset-overlay.show{display:flex!important;}
 .login-box{background:#fff;border-radius:20px;padding:2.2rem 2rem;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.18),0 0 0 4px rgba(255,255,255,.5);}
 .login-logo{text-align:center;margin-bottom:1.8rem;}
 .login-logo img{width:140px;height:auto;object-fit:contain;margin-bottom:.6rem;}
