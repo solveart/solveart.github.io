@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════
 //  솔브아트 전용 AI 모듈 (ai.js) v2
 //  RAG 기반 학원 전용 AI
-//  ✅ Claude.ai Pro 플랜 활용 (무료 API 키 불필요)
+//  ✅ Claude.ai / ChatGPT 복사 모드 활용 (무료 API 키 불필요)
 //  ✅ Claude API 직접 연동 (선택)
 //  ✅ Ollama 로컬 AI (선택)
 // ════════════════════════════════════════════════════════════
@@ -97,7 +97,7 @@ ${academyCtx}
 }
 
 // ════════════════════════════════════════════
-//  핵심 기능: Claude.ai용 프롬프트 생성 + 복사
+//  핵심 기능: Claude.ai / ChatGPT용 프롬프트 생성 + 복사
 // ════════════════════════════════════════════
 function buildClaudePrompt(userQuestion, contextOptions = {}) {
   const systemCtx = buildAcademyContext(contextOptions);
@@ -130,6 +130,47 @@ async function copyToClaudeAI(userQuestion, contextOptions = {}) {
     document.body.removeChild(ta);
     return { success: true, prompt: fullPrompt };
   }
+}
+
+
+function getCopyTargetLabel(target = 'claude') {
+  if (target === 'chatgpt') return 'ChatGPT';
+  if (target === 'both') return 'Claude.ai 또는 ChatGPT';
+  return 'Claude.ai';
+}
+
+function getCopyTargetUrl(target = 'claude') {
+  if (target === 'chatgpt') return 'https://chatgpt.com/';
+  return 'https://claude.ai/';
+}
+
+function getCopyTargetOpenButtons(target = 'both') {
+  const btnStyle = 'padding:.35rem .7rem;border-radius:8px;font-size:.72rem;font-weight:800;text-decoration:none;display:inline-block;';
+  if (target === 'chatgpt') {
+    return `<a href="https://chatgpt.com/" target="_blank" style="background:#10A37F;color:#fff;${btnStyle}">🚀 ChatGPT 열기</a>`;
+  }
+  if (target === 'claude') {
+    return `<a href="https://claude.ai/" target="_blank" style="background:#1a1a1a;color:var(--gold);${btnStyle}">🚀 Claude.ai 열기</a>`;
+  }
+  return `<div style="display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end;">
+    <a href="https://claude.ai/" target="_blank" style="background:#1a1a1a;color:var(--gold);${btnStyle}">🚀 Claude.ai</a>
+    <a href="https://chatgpt.com/" target="_blank" style="background:#10A37F;color:#fff;${btnStyle}">🚀 ChatGPT</a>
+  </div>`;
+}
+
+async function copyToAnyAI(userQuestion, contextOptions = {}, target = 'both') {
+  const fullPrompt = buildClaudePrompt(userQuestion, contextOptions);
+  try {
+    await navigator.clipboard.writeText(fullPrompt);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = fullPrompt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  return { success: true, prompt: fullPrompt, target, label: getCopyTargetLabel(target) };
 }
 
 // ════════════════════════════════════════════
@@ -190,7 +231,7 @@ function renderAIPage() {
     .map(s => `<option value="${s.name}">${s.name}</option>`).join('');
 
   const modeLabel = isCopyMode
-    ? '📋 Claude.ai 복사 모드 (Pro 플랜 활용 · 무료)'
+    ? '📋 Claude.ai / ChatGPT 복사 모드 (무료)'
     : mode === 'ollama'
       ? '🖥 Ollama 로컬 AI (' + (AI_CFG.ollamaModel||'llama3.2') + ')'
       : '☁️ Claude API';
@@ -221,14 +262,14 @@ function renderAIPage() {
   <div id="ai-panel-chat">
 
     ${isCopyMode ? `
-    <!-- Claude.ai 복사 모드 안내 -->
+    <!-- Claude.ai / ChatGPT 복사 모드 안내 -->
     <div style="background:linear-gradient(135deg,#1a1a1a,#2a1a00);border-radius:14px;padding:1rem;margin-bottom:.8rem;color:#fff;">
-      <div style="font-size:.75rem;font-weight:900;color:var(--gold);margin-bottom:.5rem;">📋 사용 방법 (Claude Pro 활용)</div>
+      <div style="font-size:.75rem;font-weight:900;color:var(--gold);margin-bottom:.5rem;">📋 사용 방법 (Claude.ai / ChatGPT 복사)</div>
       <div style="font-size:.72rem;color:rgba(255,255,255,.7);line-height:1.7;">
         1️⃣ 아래 원생 선택 후 질문 입력<br>
-        2️⃣ <strong style="color:var(--gold);">📋 Claude.ai에서 답변받기</strong> 클릭<br>
+        2️⃣ <strong style="color:var(--gold);">Claude.ai 또는 ChatGPT 복사 버튼</strong> 클릭<br>
         3️⃣ 학원 데이터가 포함된 프롬프트가 자동 복사됨<br>
-        4️⃣ <a href="https://claude.ai" target="_blank" style="color:var(--gold);">claude.ai</a> 접속 → 붙여넣기(Ctrl+V) → 전송
+        4️⃣ Claude.ai 또는 ChatGPT 접속 → 붙여넣기(Ctrl+V) → 전송
       </div>
     </div>
     ` : ''}
@@ -268,11 +309,23 @@ function renderAIPage() {
         placeholder="예: 하윤이 최근 수업 분석해줘&#10;예: 다음 달 수업 계획 추천해줘&#10;예: 결석 많은 원생 연락 문자 작성해줘"></textarea>
     </div>
 
-    <!-- 핵심 버튼: Claude.ai 복사 -->
-    <button onclick="sendToClaudeAI()"
-      style="width:100%;padding:.9rem;background:#1a1a1a;color:var(--gold);border:none;border-radius:12px;
-      font-size:.95rem;font-weight:900;cursor:pointer;margin-bottom:.5rem;font-family:inherit;">
-      📋 Claude.ai에서 답변받기
+    <!-- 핵심 버튼: Claude.ai / ChatGPT 복사 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">
+      <button onclick="sendToClaudeAI()"
+        style="width:100%;padding:.85rem;background:#1a1a1a;color:var(--gold);border:none;border-radius:12px;
+        font-size:.86rem;font-weight:900;cursor:pointer;font-family:inherit;">
+        📋 Claude.ai 복사
+      </button>
+      <button onclick="sendToChatGPTAI()"
+        style="width:100%;padding:.85rem;background:#10A37F;color:#fff;border:none;border-radius:12px;
+        font-size:.86rem;font-weight:900;cursor:pointer;font-family:inherit;">
+        📋 ChatGPT 복사
+      </button>
+    </div>
+    <button onclick="sendToBothAI()"
+      style="width:100%;padding:.72rem;background:var(--gold);color:var(--ink);border:none;border-radius:10px;
+      font-size:.82rem;font-weight:900;cursor:pointer;margin-bottom:.5rem;font-family:inherit;">
+      📋 같은 프롬프트 복사 후 원하는 AI에서 사용
     </button>
 
     ${!isCopyMode ? `
@@ -288,14 +341,10 @@ function renderAIPage() {
       <div style="background:var(--gold-pale);border:2px solid var(--gold);border-radius:12px;padding:.9rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;">
           <div style="font-size:.78rem;font-weight:900;color:#1B5E20;">✅ 프롬프트 복사 완료!</div>
-          <a href="https://claude.ai" target="_blank"
-            style="background:#1a1a1a;color:var(--gold);padding:.35rem .8rem;border-radius:8px;
-            font-size:.72rem;font-weight:800;text-decoration:none;">
-            🚀 Claude.ai 열기
-          </a>
+          <div id="ai-prompt-open-buttons">${getCopyTargetOpenButtons('both')}</div>
         </div>
         <div style="font-size:.72rem;color:#555;margin-bottom:.5rem;line-height:1.6;">
-          claude.ai에서 <strong>Ctrl+V (붙여넣기)</strong> 후 전송하면<br>
+          Claude.ai 또는 ChatGPT에서 <strong>Ctrl+V (붙여넣기)</strong> 후 전송하면<br>
           학원 데이터를 분석한 답변을 받을 수 있어요!
         </div>
         <div style="font-size:.68rem;color:var(--muted);margin-bottom:.5rem;">프롬프트 미리보기:</div>
@@ -351,7 +400,7 @@ function renderAIPage() {
         <span>✅ 복사 완료</span>
         <div style="display:flex;gap:.4rem;">
           <button onclick="copyAIResult('ai-rpt-text')" class="btn btn-o btn-sm">📋 다시 복사</button>
-          <a href="https://claude.ai" target="_blank" class="btn btn-gold btn-sm">🚀 Claude.ai</a>
+          <a href="https://claude.ai" target="_blank" class="btn btn-gold btn-sm">🚀 Claude.ai</a><a href="https://chatgpt.com/" target="_blank" class="btn btn-g btn-sm">🚀 ChatGPT</a>
         </div>
       </div>
       <div id="ai-rpt-text" style="font-size:.72rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;
@@ -390,7 +439,7 @@ function renderAIPage() {
         <span>✅ 복사 완료</span>
         <div style="display:flex;gap:.4rem;">
           <button onclick="copyAIResult('ai-msg-text')" class="btn btn-o btn-sm">📋 다시 복사</button>
-          <a href="https://claude.ai" target="_blank" class="btn btn-gold btn-sm">🚀 Claude.ai</a>
+          <a href="https://claude.ai" target="_blank" class="btn btn-gold btn-sm">🚀 Claude.ai</a><a href="https://chatgpt.com/" target="_blank" class="btn btn-g btn-sm">🚀 ChatGPT</a>
         </div>
       </div>
       <div id="ai-msg-text" style="font-size:.72rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;
@@ -422,7 +471,7 @@ function renderAIPage() {
         <span id="ai-analysis-label">분석 결과</span>
         <div style="display:flex;gap:.4rem;">
           <button onclick="copyAIResult('ai-analysis-text')" class="btn btn-o btn-sm">📋 다시 복사</button>
-          <a href="https://claude.ai" target="_blank" class="btn btn-gold btn-sm">🚀 Claude.ai</a>
+          <a href="https://claude.ai" target="_blank" class="btn btn-gold btn-sm">🚀 Claude.ai</a><a href="https://chatgpt.com/" target="_blank" class="btn btn-g btn-sm">🚀 ChatGPT</a>
         </div>
       </div>
       <div id="ai-analysis-text" style="font-size:.72rem;white-space:pre-wrap;max-height:240px;overflow-y:auto;
@@ -466,16 +515,16 @@ function renderAIPage() {
 
       <div style="display:flex;flex-direction:column;gap:.5rem;">
 
-        <!-- 옵션 1: Claude.ai 복사 (추천) -->
+        <!-- 옵션 1: Claude.ai / ChatGPT 복사 (추천) -->
         <label style="display:flex;gap:.7rem;align-items:flex-start;cursor:pointer;
           padding:.8rem;border-radius:10px;border:2px solid ${mode==='copy'||isCopyMode?'var(--gold)':'var(--border)'};
           background:${mode==='copy'||isCopyMode?'var(--gold-pale)':'#fff'};">
           <input type="radio" name="ai-mode" value="copy" ${isCopyMode?'checked':''} onchange="onAIModeChange()">
           <div>
-            <div style="font-weight:900;font-size:.85rem;">📋 Claude.ai 복사 모드 <span style="background:#E8F5E9;color:#1B5E20;font-size:.65rem;padding:1px 7px;border-radius:10px;font-weight:800;">추천 · 무료</span></div>
+            <div style="font-weight:900;font-size:.85rem;">📋 Claude.ai / ChatGPT 복사 모드 <span style="background:#E8F5E9;color:#1B5E20;font-size:.65rem;padding:1px 7px;border-radius:10px;font-weight:800;">추천 · 무료</span></div>
             <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem;line-height:1.5;">
-              Claude Pro 플랜 그대로 활용.<br>
-              프롬프트를 자동 생성해서 claude.ai에 붙여넣기만 하면 됨.<br>
+              ChatGPT Plus 또는 Claude Pro 플랜 그대로 활용.<br>
+              프롬프트를 자동 생성해서 Claude.ai/ChatGPT에 붙여넣기만 하면 됨.<br>
               <strong>추가 비용 0원</strong>
             </div>
           </div>
@@ -575,34 +624,35 @@ function onAIModeChange() {
 }
 
 // ════════════════════════════════════════════
-//  핵심: Claude.ai 복사 모드
+//  핵심: Claude.ai / ChatGPT 복사 모드
 // ════════════════════════════════════════════
 let lastPrompt = '';
+let lastPromptTarget = 'both';
 
-async function sendToClaudeAI() {
+async function sendToCopyAI(target = 'both') {
   const question = el('ai-input')?.value?.trim();
   if(!question) { toast('질문을 입력하세요'); return; }
 
   const stuName = el('ai-stu-select')?.value || '';
-  const prompt = buildClaudePrompt(question, { stuName, months: 2, includeAll: !stuName });
+  const result = await copyToAnyAI(question, { stuName, months: 2, includeAll: !stuName }, target);
+  const prompt = result.prompt;
   lastPrompt = prompt;
-
-  try {
-    await navigator.clipboard.writeText(prompt);
-  } catch(e) {
-    const ta = document.createElement('textarea');
-    ta.value = prompt; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-  }
+  lastPromptTarget = target;
 
   // 미리보기 표시
   const preview = el('ai-prompt-preview');
   const text = el('ai-prompt-text');
+  const btns = el('ai-prompt-open-buttons');
   if(preview) preview.style.display = 'block';
   if(text) text.textContent = prompt.slice(0, 500) + (prompt.length > 500 ? '\n...(이하 생략)' : '');
+  if(btns) btns.innerHTML = getCopyTargetOpenButtons(target);
   preview?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  toast('📋 복사 완료! claude.ai에 붙여넣기 하세요');
+  toast('📋 복사 완료! ' + result.label + '에 붙여넣기 하세요');
 }
+
+function sendToClaudeAI() { return sendToCopyAI('claude'); }
+function sendToChatGPTAI() { return sendToCopyAI('chatgpt'); }
+function sendToBothAI() { return sendToCopyAI('both'); }
 
 async function sendAIDirectly() {
   const question = el('ai-input')?.value?.trim();
@@ -625,7 +675,7 @@ async function sendAIDirectly() {
 
 function copyPromptAgain() {
   if(!lastPrompt) return;
-  navigator.clipboard.writeText(lastPrompt).then(() => toast('📋 다시 복사!'));
+  navigator.clipboard.writeText(lastPrompt).then(() => toast('📋 다시 복사! ' + getCopyTargetLabel(lastPromptTarget) + '에서 붙여넣기 하세요'));
 }
 
 function aiSetQuestion(q) {
@@ -663,7 +713,7 @@ async function generateAIReport() {
 
   el('ai-rpt-preview').style.display = 'block';
   el('ai-rpt-text').textContent = prompt.slice(0, 600) + '...';
-  toast('📋 리포트 프롬프트 복사! claude.ai에 붙여넣기 하세요');
+  toast('📋 리포트 프롬프트 복사! Claude.ai 또는 ChatGPT에 붙여넣기 하세요');
 }
 
 // ════════════════════════════════════════════
@@ -701,7 +751,7 @@ ${extra ? '추가 정보: ' + extra : ''}
 
   el('ai-msg-preview').style.display = 'block';
   el('ai-msg-text').textContent = prompt.slice(0, 600) + '...';
-  toast('📋 문자 프롬프트 복사! claude.ai에 붙여넣기 하세요');
+  toast('📋 문자 프롬프트 복사! Claude.ai 또는 ChatGPT에 붙여넣기 하세요');
 }
 
 // ════════════════════════════════════════════
@@ -735,7 +785,7 @@ async function generateAIAnalysis(type) {
   el('ai-analysis-label').textContent = labels[type];
   el('ai-analysis-preview').style.display = 'block';
   el('ai-analysis-text').textContent = prompt.slice(0, 600) + '...';
-  toast('📋 분석 프롬프트 복사! claude.ai에 붙여넣기 하세요');
+  toast('📋 분석 프롬프트 복사! Claude.ai 또는 ChatGPT에 붙여넣기 하세요');
 }
 
 // ════════════════════════════════════════════

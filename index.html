@@ -91,6 +91,14 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
+
+/* ── 공통 뒤로가기 / 홈 버튼 ── */
+.page-top-nav{display:none;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.75rem;position:sticky;top:calc(var(--header-h) + .35rem);z-index:120;background:rgba(255,248,225,.94);backdrop-filter:blur(8px);border:1.5px solid var(--gold-light);border-radius:12px;padding:.45rem .5rem;box-shadow:var(--shadow);}
+.page-top-nav button{border:none;border-radius:9px;padding:.45rem .8rem;font-family:'Noto Sans KR',sans-serif;font-size:.78rem;font-weight:900;cursor:pointer;}
+.page-back-btn{background:var(--ink);color:var(--gold);}
+.page-home-btn{background:var(--gold);color:var(--ink);}
+@media print{.page-top-nav,.no-print{display:none!important;}}
+
 /* ── 카드 ── */
 .card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:.9rem;box-shadow:var(--shadow);}
 .ctitle{font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;padding-bottom:.5rem;border-bottom:1.5px solid var(--gold-light);}
@@ -2225,6 +2233,14 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;box-sizing:border-box;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+
+/* ── 공통 뒤로가기 / 홈 버튼 ── */
+.page-top-nav{display:none;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.75rem;position:sticky;top:calc(var(--header-h) + .35rem);z-index:120;background:rgba(255,248,225,.94);backdrop-filter:blur(8px);border:1.5px solid var(--gold-light);border-radius:12px;padding:.45rem .5rem;box-shadow:var(--shadow);}
+.page-top-nav button{border:none;border-radius:9px;padding:.45rem .8rem;font-family:'Noto Sans KR',sans-serif;font-size:.78rem;font-weight:900;cursor:pointer;}
+.page-back-btn{background:var(--ink);color:var(--gold);}
+.page-home-btn{background:var(--gold);color:var(--ink);}
+@media print{.page-top-nav,.no-print{display:none!important;}}
 
 /* ── 카드 ── */
 .card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:.9rem;box-shadow:var(--shadow);}

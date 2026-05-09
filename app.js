@@ -186,6 +186,7 @@ function showApp(){
   rb.className='rbdg '+(isA?'r-admin':'r-teacher');
   sv('r-teacher',CP?.name||'');sv('r-date',today());sv('mon-date',today());sv('sel-month',today().slice(0,7));
   renderHome();initMyPage();loadStudentsFromDB();
+  setTimeout(()=>syncPageTopNav('home'),0);
   AI_CFG = JSON.parse(localStorage.getItem('sa_ai_cfg')||'{}');
   checkPortalParam();
   loadCounselsFromDB();
@@ -1275,9 +1276,67 @@ function saveURL(){SU=el('su-input').value.trim();localStorage.setItem('sa_url',
 async function testConn(){if(!SU){toast('⚠️ URL 미입력');return;}try{const r=await fetch(SU);const d=await r.json();toast(d.status==='ok'?'✅ 연결 성공!':'⚠️ 응답 이상');}catch{toast('❌ 연결 실패');}}
 
 // ════════════════════════════════════════════
+//  공통 뒤로가기 / 닫기 네비게이션
+// ════════════════════════════════════════════
+let SA_CURRENT_PAGE = 'home';
+let SA_PREV_PAGE = '';
+let SA_NAV_READY = false;
+
+function getActivePageId(){
+  const active = document.querySelector('.page.on');
+  return active ? active.id.replace('page-','') : SA_CURRENT_PAGE || 'home';
+}
+
+function ensurePageTopNav(){
+  document.querySelectorAll('.page').forEach(page=>{
+    if(page.querySelector(':scope > .page-top-nav')) return;
+    const bar = document.createElement('div');
+    bar.className = 'page-top-nav no-print';
+    bar.innerHTML = '<button type="button" class="page-back-btn" onclick="goBackPage()">← 뒤로</button><button type="button" class="page-home-btn" onclick="goHomePage()">🏠 홈</button>';
+    page.insertBefore(bar, page.firstChild);
+  });
+}
+
+function syncPageTopNav(id){
+  ensurePageTopNav();
+  document.querySelectorAll('.page-top-nav').forEach(bar=>{
+    const page = bar.closest('.page');
+    const pid = page ? page.id.replace('page-','') : '';
+    bar.style.display = (pid && pid !== 'home') ? 'flex' : 'none';
+  });
+}
+
+function goBackPage(){
+  const current = getActivePageId();
+  if(SA_PREV_PAGE && SA_PREV_PAGE !== current){
+    nav(SA_PREV_PAGE, false);
+    return;
+  }
+  if(window.history && window.history.length > 1){
+    window.history.back();
+  }else{
+    nav('home', false);
+  }
+}
+
+function goHomePage(){
+  nav('home', false);
+}
+
+function closePrintPage(){
+  try{ window.close(); }
+  catch(e){ history.back(); }
+}
+
+window.addEventListener('popstate', function(e){
+  const page = e.state && e.state.saPage ? e.state.saPage : 'home';
+  nav(page, false);
+});
+
+// ════════════════════════════════════════════
 //  NAV
 // ════════════════════════════════════════════
-function nav(id){
+function nav(id, pushStateFlag=true){
   if(!CP)return;
   if(id==='scan'&&!hasPerm('scan_upload')){toast('⚠️ 스캔 권한이 없어요');return;}
   if(id==='lesson'&&!hasPerm('scan_save')){toast('⚠️ 수업 입력 권한이 없어요');return;}
@@ -1285,6 +1344,18 @@ function nav(id){
   if(id==='hist'&&!hasPerm('hist_view')){toast('⚠️ 기록 열람 권한이 없어요');return;}
   if(id==='students'&&!hasPerm('stu_view')){toast('⚠️ 원생 관리 열람 권한이 없어요');return;}
   if(id==='admin'&&CP.role!=='admin'){toast('⚠️ 관리자 전용');return;}
+
+  const beforePage = getActivePageId();
+  if(beforePage && beforePage !== id) SA_PREV_PAGE = beforePage;
+  SA_CURRENT_PAGE = id;
+  if(pushStateFlag && window.history){
+    const state = { saPage:id };
+    if(!SA_NAV_READY){
+      window.history.replaceState({saPage:beforePage || 'home'}, '', window.location.href);
+      SA_NAV_READY = true;
+    }
+    window.history.pushState(state, '', window.location.href);
+  }
 
   // 페이지 전환
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
@@ -1313,6 +1384,8 @@ function nav(id){
   if(id==='admin')loadTeachers();
   if(id==='mypage')initMyPage();
   if(id==='result'){}
+  syncPageTopNav(id);
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 
@@ -2563,9 +2636,10 @@ ${selPhotos.length?'<div style="margin-bottom:20px;"><div class="section-title">
   <span>생성일: ${today()}</span>
 </div>
 
-<div class="no-print" style="text-align:center;margin-top:20px;display:flex;gap:10px;justify-content:center;">
+<div class="no-print" style="text-align:center;margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
   <button onclick="window.print()" style="padding:10px 28px;background:#1a1a1a;color:#FFC800;border:none;border-radius:8px;font-weight:900;cursor:pointer;font-size:14px;">🖨️ PDF로 저장 / 인쇄</button>
   ${pfFormat==='jpg'?'<button onclick="captureJPG()" style="padding:10px 28px;background:#6A1B9A;color:#fff;border:none;border-radius:8px;font-weight:900;cursor:pointer;font-size:14px;">🖼 JPG로 저장</button>':''}
+  <button onclick="window.close()" style="padding:10px 28px;background:#666;color:#fff;border:none;border-radius:8px;font-weight:900;cursor:pointer;font-size:14px;">✕ 닫기</button>
 </div>
 </div>
 </body></html>`;
@@ -2991,8 +3065,15 @@ function printJournalTemplate(){
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{background:#f0f0f0;padding:7px 8px;border:1px solid #ccc;text-align:center;}
   .footer{margin-top:12px;display:flex;justify-content:space-between;font-size:12px;color:#666;}
-  @media print{button{display:none!important;}}
+  .top-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-bottom:12px;}
+  .top-actions button{padding:8px 14px;border:none;border-radius:7px;font-weight:800;cursor:pointer;font-size:13px;}
+  .btn-print{background:#FFC800;color:#1a1a1a;}.btn-close{background:#555;color:#fff;}
+  @media print{.no-print,button{display:none!important;} body{padding:12px;}}
   </style></head><body>
+  <div class="top-actions no-print">
+    <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button>
+    <button class="btn-close" onclick="window.close()">✕ 닫기</button>
+  </div>
   <h2>${CFG.name||'솔브아트'} 미술학원 — 수업일지</h2>
   <div class="meta">
     <span>날짜: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
@@ -3013,8 +3094,9 @@ function printJournalTemplate(){
     <span>* 출결: ○출석 ✕결석 △지각</span>
     <span>* 완성도: ★시작 ★★밑색 ★★★명암 ★★★★마무리 ★★★★★완성</span>
   </div>
-  <div style="margin-top:10px;text-align:center;">
+  <div class="no-print" style="margin-top:10px;text-align:center;display:flex;gap:8px;justify-content:center;">
     <button onclick="window.print()" style="padding:8px 24px;background:#FFC800;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">🖨️ 인쇄</button>
+    <button onclick="window.close()" style="padding:8px 24px;background:#555;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">✕ 닫기</button>
   </div>
   </body></html>`);
   w.document.close();
