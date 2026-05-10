@@ -1403,6 +1403,28 @@ function nav(id, pushStateFlag=true){
 //  대시보드 상세 팝업
 // ════════════════════════════════════════════
 function openStatDetail(type){
+  if(type==='churn'){
+    const title=el('stat-detail-title');
+    const body=el('stat-detail-body');
+    const modal=el('modal-stat-detail');
+    if(title) title.textContent='🚨 이탈 위험 원생 전체';
+    if(body){
+      const activeStus=STUS.filter(s=>!s.status||s.status==='active');
+      const all=activeStus.map(s=>({...s,risk:calcChurnRisk(s.id,s.name)}))
+        .sort((a,b)=>b.risk.score-a.risk.score);
+      body.innerHTML=all.map(s=>`
+        <div style="display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid var(--gold-light);">
+          <div style="width:32px;height:32px;border-radius:50%;background:${s.risk.color};display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:.8rem;">${(s.name||'?')[0]}</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:.82rem;">${s.name} <span style="font-size:.7rem;font-weight:900;color:${s.risk.color};">${s.risk.label}</span></div>
+            <div style="font-size:.67rem;color:var(--muted);">${s.risk.reasons.length?s.risk.reasons.join(' · '):'이탈 위험 없음'}</div>
+          </div>
+          <div style="font-size:1rem;font-weight:900;color:${s.risk.color};">${s.risk.score}점</div>
+        </div>`).join('');
+    }
+    if(modal) modal.classList.add('show');
+    return;
+  }
   const modal=el('modal-stat-detail');
   const title=el('stat-detail-title');
   const body=el('stat-detail-body');
@@ -2032,36 +2054,6 @@ function contactParent(stuId, stuName){
 
 // openStatDetail에 churn 케이스 추가
 const _origOpenStatDetail = openStatDetail;
-function openStatDetail(type){
-  if(type==='churn'){
-    const title=el('stat-detail-title');
-    const body=el('stat-detail-body');
-    const modal=el('modal-stat-detail');
-    if(title) title.textContent='🚨 이탈 위험 원생 전체';
-    if(body){
-      const activeStus=STUS.filter(s=>!s.status||s.status==='active');
-      const all=activeStus.map(s=>({...s,risk:calcChurnRisk(s.id,s.name)}))
-        .sort((a,b)=>b.risk.score-a.risk.score);
-      body.innerHTML=all.map(s=>`
-        <div style="display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid var(--gold-light);">
-          <div style="width:32px;height:32px;border-radius:50%;background:${s.risk.color};display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:.8rem;">${(s.name||'?')[0]}</div>
-          <div style="flex:1;">
-            <div style="font-weight:700;font-size:.82rem;">${s.name} <span style="font-size:.7rem;font-weight:900;color:${s.risk.color};">${s.risk.label}</span></div>
-            <div style="font-size:.67rem;color:var(--muted);">${s.risk.reasons.length?s.risk.reasons.join(' · '):'이탈 위험 없음'}</div>
-          </div>
-          <div style="font-size:1rem;font-weight:900;color:${s.risk.color};">${s.risk.score}점</div>
-        </div>`).join('');
-    }
-    if(modal) modal.classList.add('show');
-    return;
-  }
-  _origOpenStatDetail(type);
-}
-
-// ════════════════════════════════════════════
-//  3. 학부모 링크 갤러리 포털
-// ════════════════════════════════════════════
-let portalStuId='', portalStuName='';
 
 function shareParentLink(stuId, stuName){
   portalStuId=stuId; portalStuName=stuName;
