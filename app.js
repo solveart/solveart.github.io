@@ -163,6 +163,11 @@ async function doLogin(){
     }
     el('lerr').textContent='Firebase 미설정 상태입니다';return;
   }
+  if(!auth || typeof auth.signInWithEmailAndPassword !== 'function'){
+    el('lerr').textContent='Firebase 인증 모듈을 아직 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.';
+    console.error('Firebase auth is not ready', { auth, FB_READY });
+    return;
+  }
   el('lerr').textContent='로그인 중...';
   try{await auth.signInWithEmailAndPassword(id,pw);}
   catch(e){
