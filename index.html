@@ -88,7 +88,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;box-sizing:border-box;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;box-sizing:border-box;margin-left:auto;margin-right:auto;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -391,8 +391,21 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   #sidebar{display:flex;}
   .bnav{display:none !important;}
   .app-body{justify-content:flex-start;}
-  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
-  .page{padding:1.5rem 2rem;max-width:720px;margin:0 auto;width:100%;}
+  .content-area{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overflow-x:hidden;
+    overflow-y:auto;
+  }
+  .page{
+    padding:1.5rem 2rem;
+    max-width:720px;
+    width:100%;
+    margin:0 auto;
+    box-sizing:border-box;
+  }
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
@@ -2250,7 +2263,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
 .nitem span:last-child{font-weight:800;}
 
 /* ── 페이지 ── */
-.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;box-sizing:border-box;}
+.page{display:none;padding:1rem 1rem 5rem;animation:fadeIn .22s ease;width:100%;max-width:680px;box-sizing:border-box;margin-left:auto;margin-right:auto;}
 .page.on{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
@@ -2553,8 +2566,21 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   #sidebar{display:flex;}
   .bnav{display:none !important;}
   .app-body{justify-content:flex-start;}
-  .content-area{flex:1;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;}
-  .page{padding:1.5rem 2rem;max-width:720px;margin:0 auto;width:100%;}
+  .content-area{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overflow-x:hidden;
+    overflow-y:auto;
+  }
+  .page{
+    padding:1.5rem 2rem;
+    max-width:720px;
+    width:100%;
+    margin:0 auto;
+    box-sizing:border-box;
+  }
   .sval{font-size:1.8rem;}
   .modal{max-width:500px;}
   .dash-hello-title{font-size:1.3rem;}
