@@ -234,17 +234,7 @@ async function loadStudentsFromDB(){
   initCounselSelects();
 }
 
-async function loadPaymentsFromDB(){
-  if(!FB_READY||!db)return;
-  try{
-    const yr=new Date().getFullYear();
-    const snap=await db.collection('payments').get();
-    snap.forEach(doc=>{
-      localStorage.setItem(doc.id, JSON.stringify(doc.data()));
-    });
-  }catch(e){console.warn('수강료 로드 오류:',e);}
-}
-
+async 
 function updStuSelects(){
   const stus=STUS.map(s=>s.name).filter(Boolean).sort();
   ['m-stu','sel-stu','cal-stu'].forEach(id=>{
@@ -2832,7 +2822,7 @@ function renderClassList(){
   const wrap = el('class-list-wrap');
   if(!wrap) return;
   if(!CLASSES.length){
-    wrap.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;">반이 없어요. 반을 추가해보세요!</div>';
+    wrap.innerHTML=emptyState('🏫','등록된 반이 없어요','시간대별 반을 만들어 원생을 그룹 관리하세요','<button class="btn btn-gold" onclick="openAddClass()">+ 반 추가</button>');
     el('class-attend-card').style.display = 'none';
     return;
   }
@@ -4596,14 +4586,75 @@ window.addEventListener('load',()=>{
 // ════════════════════════════════════════════
 //  UTILS
 // ════════════════════════════════════════════
+
+// ════════════════════════════════════════════
+//  UX 개선 모듈 (스켈레톤·빈상태·토스트·애니메이션)
+// ════════════════════════════════════════════
+
+function skeletonCard(lines=2){
+  return '<div class="card" style="pointer-events:none;">'
+    +'<div class="skeleton skeleton-text" style="width:40%;height:12px;margin-bottom:.5rem;"></div>'
+    +Array(lines).fill('<div class="skeleton skeleton-text" style="height:11px;margin-bottom:.35rem;"></div>').join('')
+    +'</div>';
+}
+function showSkeleton(containerId,count=3){
+  const c=el(containerId);if(c)c.innerHTML=Array(count).fill(skeletonCard()).join('');
+}
+
+function emptyState(icon,title,desc,actionHtml){
+  return '<div class="empty-state">'
+    +'<div class="empty-state-icon">'+icon+'</div>'
+    +'<div class="empty-state-title">'+title+'</div>'
+    +'<div class="empty-state-desc">'+desc+'</div>'
+    +(actionHtml?'<div class="empty-state-action">'+actionHtml+'</div>':'')
+    +'</div>';
+}
+
+function toast(msg,duration){
+  duration=duration||2800;
+  document.querySelectorAll('.toast-msg').forEach(t=>t.remove());
+  let bg='#1a1a1a', bc='rgba(255,200,0,.25)';
+  if(msg.startsWith('✅')){bg='#1B5E20';bc='rgba(165,214,167,.4)';}
+  else if(msg.startsWith('❌')){bg='#B71C1C';bc='rgba(239,154,154,.4)';}
+  else if(msg.startsWith('⚠️')){bg='#0D47A1';bc='rgba(144,202,249,.4)';}
+  const t=document.createElement('div');
+  t.className='toast-msg';
+  t.style.background=bg;t.style.borderColor=bc;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{
+    t.style.transition='opacity .3s,transform .3s';
+    t.style.opacity='0';t.style.transform='translateX(-50%) translateY(8px)';
+    setTimeout(()=>t.remove(),300);
+  },duration);
+}
+
+function showOv(msg){
+  let ov=el('ov');
+  if(!ov){
+    ov=document.createElement('div');ov.id='ov';
+    ov.innerHTML='<div class="spin"></div><div class="ov-text" id="ov-msg">'+(msg||'처리 중...')+'</div>';
+    document.body.appendChild(ov);
+  }
+  const om=el('ov-msg');if(om)om.textContent=msg||'처리 중...';
+  ov.classList.add('show');ov.style.display='flex';
+}
+function hideOv(){const ov=el('ov');if(ov){ov.classList.remove('show');ov.style.display='none';}}
+
+function animatePage(pageEl){
+  if(!pageEl)return;
+  pageEl.style.animation='none';pageEl.offsetHeight;
+  pageEl.style.animation='fadeIn .22s ease forwards';
+}
+function refreshIcons(){
+  if(typeof lucide!=='undefined'){try{lucide.createIcons();}catch(e){}}
+}
+
 function el(id){return document.getElementById(id);}
 function gv(id){return el(id)?.value||'';}
 function sv(id,v){const e=el(id);if(e)e.value=v||'';}
 function today(){return new Date().toISOString().slice(0,10);}
 function delay(ms){return new Promise(r=>setTimeout(r,ms));}
-function showOv(msg){el('ov').classList.add('show');if(msg)el('ov-msg').textContent=msg;}
-function hideOv(){el('ov').classList.remove('show');}
 function closeM(id){el(id).classList.remove('show');}
 function shareRpt(){if(navigator.share)navigator.share({title:'솔브아트 리포트'});else toast('화면 캡처 후 카카오톡으로 공유하세요');}
-function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
 
