@@ -171,7 +171,8 @@ async function doLogin(){
     el('lerr').textContent=m[e.code]||e.message;
   }
 }
-async function doLogout(){if(auth)await auth.signOut();else showLogin();}
+async function doLogout(){
+  stopRealtimeSync();if(auth)await auth.signOut();else showLogin();}
 
 function showLogin(){el('login-screen').style.display='flex';el('main-app').style.display='none';sv('li','');sv('lp','');el('lerr').textContent='';}
 
@@ -505,12 +506,8 @@ async function togglePay(stuId,year,month,btn){
   pays[month]=!pays[month];
   localStorage.setItem(key,JSON.stringify(pays));
   btn.className=`pay-month ${pays[month]?'paid':''}`;
-  // Firestore에도 저장
-  if(FB_READY&&db){
-    try{
-      await db.collection('payments').doc(key).set(pays,{merge:true});
-    }catch(e){console.warn('납부 저장 오류:',e);}
-  }
+  // Firestore 저장 (강화)
+  await savePaymentToFirestore(stuId, year, pays);
   // 미납 카운트 갱신 — 현재 달 기준으로만 계산
   const curMonth=new Date().getMonth()+1;
   const curYear=new Date().getFullYear();
@@ -1196,6 +1193,22 @@ function aTab(id,btn){
   ['teachers','monitor','salary','ledger','config'].forEach(t=>{if(el('at-'+t))el('at-'+t).style.display='none';});el('at-'+id).style.display='block';
   if(id==='teachers')loadTeachers();
   if(id==='monitor'){sv('mon-date',today());loadMonitor();}
+  if(id==='config'){
+    // DB 상태 버튼 동적 추가
+    const dbBtn = el('admin-db-status-btn');
+    if(!dbBtn && CP?.role==='admin'){
+      const cfgCard = document.querySelector('#at-config .card');
+      if(cfgCard){
+        const btn = document.createElement('button');
+        btn.id = 'admin-db-status-btn';
+        btn.className = 'btn btn-o btn-sm';
+        btn.style.cssText = 'width:100%;margin-bottom:.5rem;';
+        btn.textContent = '🗄️ DB 데이터 현황 조회';
+        btn.onclick = showDBStatus;
+        cfgCard.insertBefore(btn, cfgCard.firstChild);
+      }
+    }
+  }
   if(id==='salary'){loadSalaryTeachers();}
   if(id==='finance'){initFinance();loadFinanceFromDB();}
   if(id==='ledger'){initLedger();}
@@ -2789,8 +2802,10 @@ async function saveLessonInput(){
   if(FB_READY && db){
     try{
       for(const rec of batch){
-        await db.collection('records').add(rec);
+        const ref = await db.collection('records').add(rec);
+        rec._fid = ref.id;
       }
+      localStorage.setItem('sa_db', JSON.stringify(DB));
     }catch(e){ console.warn('저장 오류:', e); }
   }
   hideOv();
@@ -3931,6 +3946,492 @@ function hasPerm(key){
   // 새 권한
   return perms[key] === true;
 }
+
+// ════════════════════════════════════════════════════════════
+//  솔브아트 DB 완전 동기화 모듈
+//  모든 데이터를 Firestore ↔ localStorage 양방향 동기화
+// ════════════════════════════════════════════════════════════
+
+// ── 공통 유틸: Firestore ↔ localStorage 동기화 헬퍼
+async function syncToFirestore(collectionName, docId, data) {
+  if (!FB_READY || !db) return false;
+  try {
+    if (docId) {
+      await db.collection(collectionName).doc(docId).set(data, { merge: true });
+    } else {
+      await db.collection(collectionName).add(data);
+    }
+    return true;
+  } catch (e) {
+    console.warn(`[Firestore 저장 실패] ${collectionName}:`, e.message);
+    return false;
+  }
+}
+
+async function loadFromFirestore(collectionName, localKey, mergeCallback) {
+  if (!FB_READY || !db) return false;
+  try {
+    const snap = await db.collection(collectionName).get();
+    const items = [];
+    snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+    if (mergeCallback) mergeCallback(items);
+    else localStorage.setItem(localKey, JSON.stringify(items));
+    return true;
+  } catch (e) {
+    console.warn(`[Firestore 로드 실패] ${collectionName}:`, e.message);
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════
+//  1. 수업 기록 (records) — 완전 동기화
+// ════════════════════════════════════════════
+async function loadRecordsFromDB() {
+  if (!FB_READY || !db) return;
+  try {
+    // 최근 6개월 데이터만 로드 (성능 최적화)
+    const sixMoAgo = new Date();
+    sixMoAgo.setMonth(sixMoAgo.getMonth() - 6);
+    const dateStr = sixMoAgo.toISOString().slice(0, 10);
+
+    const snap = await db.collection('records')
+      .where('date', '>=', dateStr)
+      .orderBy('date', 'desc')
+      .get();
+
+    const dbRecs = [];
+    snap.forEach(doc => dbRecs.push({ _fid: doc.id, ...doc.data() }));
+
+    // 로컬과 병합 (중복 제거)
+    const localRecs = JSON.parse(localStorage.getItem('sa_db') || '[]');
+    const merged = [...dbRecs];
+    localRecs.forEach(lr => {
+      const exists = dbRecs.some(dr =>
+        dr.date === lr.date && dr.studentName === lr.studentName &&
+        dr.timeSlot === lr.timeSlot
+      );
+      if (!exists) merged.push(lr);
+    });
+
+    DB.length = 0;
+    merged.forEach(r => DB.push(r));
+    localStorage.setItem('sa_db', JSON.stringify(DB));
+    console.log(`[records 로드] ${DB.length}건`);
+  } catch (e) {
+    console.warn('[records 로드 실패]', e.message);
+  }
+}
+
+async function saveRecordToFirestore(rec) {
+  if (!FB_READY || !db) return;
+  try {
+    const docRef = await db.collection('records').add({
+      ...rec,
+      savedAt: new Date().toISOString()
+    });
+    rec._fid = docRef.id;
+  } catch (e) {
+    console.warn('[record 저장 실패]', e.message);
+  }
+}
+
+// ════════════════════════════════════════════
+//  2. 수강료 납부 (payments) — 완전 동기화
+// ════════════════════════════════════════════
+async function loadPaymentsFromDB() {
+  if (!FB_READY || !db) return;
+  try {
+    const snap = await db.collection('payments').get();
+    snap.forEach(doc => {
+      // doc.id = "pay_{stuId}_{year}" 형식
+      localStorage.setItem(doc.id, JSON.stringify(doc.data()));
+    });
+    console.log(`[payments 로드] ${snap.size}건`);
+  } catch (e) {
+    console.warn('[payments 로드 실패]', e.message);
+  }
+}
+
+async function savePaymentToFirestore(stuId, year, payData) {
+  if (!FB_READY || !db) return;
+  const docId = `pay_${stuId}_${year}`;
+  try {
+    await db.collection('payments').doc(docId).set(payData, { merge: true });
+  } catch (e) {
+    console.warn('[payment 저장 실패]', e.message);
+  }
+}
+
+// ════════════════════════════════════════════
+//  3. 반 관리 (classes) — 완전 동기화
+// ════════════════════════════════════════════
+async function loadClassesFromDB() {
+  if (!FB_READY || !db) return;
+  try {
+    const snap = await db.collection('classes').get();
+    const dbClasses = [];
+    snap.forEach(doc => dbClasses.push({ id: doc.id, ...doc.data() }));
+
+    // 로컬과 병합
+    const localClasses = JSON.parse(localStorage.getItem('sa_classes') || '[]');
+    const merged = [...dbClasses];
+    localClasses.forEach(lc => {
+      if (!dbClasses.find(dc => dc.id === lc.id)) merged.push(lc);
+    });
+
+    CLASSES.length = 0;
+    merged.forEach(c => CLASSES.push(c));
+    localStorage.setItem('sa_classes', JSON.stringify(CLASSES));
+    console.log(`[classes 로드] ${CLASSES.length}개`);
+  } catch (e) {
+    console.warn('[classes 로드 실패]', e.message);
+  }
+}
+
+// ════════════════════════════════════════════
+//  4. 급여 기록 (salaries) — 완전 동기화
+// ════════════════════════════════════════════
+async function loadSalariesFromDB() {
+  if (!FB_READY || !db) return;
+  try {
+    const snap = await db.collection('salaries').get();
+    snap.forEach(doc => {
+      localStorage.setItem(doc.id, JSON.stringify(doc.data()));
+    });
+    console.log(`[salaries 로드] ${snap.size}건`);
+  } catch (e) {
+    console.warn('[salaries 로드 실패]', e.message);
+  }
+}
+
+// ════════════════════════════════════════════
+//  5. 학원 설정 (config) — 완전 동기화
+// ════════════════════════════════════════════
+async function loadConfigFromDB() {
+  if (!FB_READY || !db) return;
+  try {
+    // 수강료 설정
+    const feesDoc = await db.collection('config').doc('fees').get();
+    if (feesDoc.exists) {
+      Object.assign(CFG, feesDoc.data());
+      localStorage.setItem('sa_cfg', JSON.stringify(CFG));
+    }
+
+    // 알림 설정
+    const notifyDoc = await db.collection('config').doc('notify').get();
+    if (notifyDoc.exists) {
+      localStorage.setItem('sa_notify', JSON.stringify(notifyDoc.data()));
+    }
+
+    // 자동 청구 설정
+    const autoFeeDoc = await db.collection('config').doc('auto_fee').get();
+    if (autoFeeDoc.exists) {
+      localStorage.setItem('sa_auto_fee', JSON.stringify(autoFeeDoc.data()));
+    }
+
+    // AI 지식베이스
+    const aiDoc = await db.collection('config').doc('ai_kb').get();
+    if (aiDoc.exists) {
+      localStorage.setItem('sa_ai_cfg', JSON.stringify({
+        ...JSON.parse(localStorage.getItem('sa_ai_cfg') || '{}'),
+        ...aiDoc.data()
+      }));
+    }
+
+    console.log('[config 로드] 완료');
+  } catch (e) {
+    console.warn('[config 로드 실패]', e.message);
+  }
+}
+
+async function saveConfigToFirestore(type, data) {
+  if (!FB_READY || !db) return;
+  try {
+    await db.collection('config').doc(type).set(data, { merge: true });
+  } catch (e) {
+    console.warn('[config 저장 실패]', e.message);
+  }
+}
+
+// ════════════════════════════════════════════
+//  6. 전체 초기 로드 함수 (showApp에서 호출)
+// ════════════════════════════════════════════
+async function loadAllDataFromDB() {
+  if (!FB_READY || !db) {
+    console.warn('[DB] Firebase 미연결 - 로컬 데이터 사용');
+    return;
+  }
+
+  showOv('데이터 불러오는 중...');
+  try {
+    // 병렬 로드 (속도 최적화)
+    await Promise.all([
+      loadStudentsFromDB(),
+      loadRecordsFromDB(),
+      loadPaymentsFromDB(),
+      loadClassesFromDB(),
+      loadCounselsFromDB(),
+      loadFinanceFromDB(),
+      loadSalariesFromDB(),
+      loadConfigFromDB(),
+    ]);
+    console.log('[DB] 전체 데이터 로드 완료');
+  } catch (e) {
+    console.warn('[DB] 일부 데이터 로드 실패:', e.message);
+  }
+  hideOv();
+}
+
+// ════════════════════════════════════════════
+//  7. 실시간 동기화 (Firestore 실시간 리스너)
+// ════════════════════════════════════════════
+let realtimeListeners = [];
+
+function startRealtimeSync() {
+  if (!FB_READY || !db || !CU) return;
+
+  // 원생 변경 실시간 감지
+  const stuListener = db.collection('students')
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (change.type === 'added' || change.type === 'modified') {
+          const idx = STUS.findIndex(s => s.id === data.id);
+          if (idx >= 0) STUS[idx] = data;
+          else STUS.push(data);
+        } else if (change.type === 'removed') {
+          const idx = STUS.findIndex(s => s.id === data.id);
+          if (idx >= 0) STUS.splice(idx, 1);
+        }
+      });
+      localStorage.setItem('sa_stus', JSON.stringify(STUS));
+      // 현재 페이지가 원생 페이지면 자동 새로고침
+      if (document.getElementById('page-students')?.classList.contains('on')) {
+        renderStudents();
+      }
+      renderHome();
+    }, err => console.warn('[원생 실시간 동기화 오류]', err));
+
+  // 수업기록 변경 실시간 감지 (오늘 날짜만)
+  const todayStr = today();
+  const recListener = db.collection('records')
+    .where('date', '==', todayStr)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        const data = { _fid: change.doc.id, ...change.doc.data() };
+        if (change.type === 'added') {
+          const exists = DB.some(r =>
+            r.date === data.date && r.studentName === data.studentName &&
+            r.timeSlot === data.timeSlot
+          );
+          if (!exists) DB.push(data);
+        } else if (change.type === 'modified') {
+          const idx = DB.findIndex(r => r._fid === data._fid);
+          if (idx >= 0) DB[idx] = data;
+        } else if (change.type === 'removed') {
+          const idx = DB.findIndex(r => r._fid === data._fid);
+          if (idx >= 0) DB.splice(idx, 1);
+        }
+      });
+      localStorage.setItem('sa_db', JSON.stringify(DB));
+      renderHome();
+    }, err => console.warn('[수업기록 실시간 동기화 오류]', err));
+
+  realtimeListeners.push(stuListener, recListener);
+  console.log('[실시간 동기화 시작]');
+}
+
+function stopRealtimeSync() {
+  realtimeListeners.forEach(unsub => unsub());
+  realtimeListeners = [];
+  console.log('[실시간 동기화 중지]');
+}
+
+// ════════════════════════════════════════════
+//  8. 데이터 내보내기 (전체 DB → Excel)
+// ════════════════════════════════════════════
+function exportAllDataToExcel() {
+  if (typeof XLSX === 'undefined') {
+    toast('❌ Excel 라이브러리 로딩 중입니다. 잠시 후 다시 시도하세요.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // 원생 시트
+  if (STUS.length) {
+    const stuData = STUS.map(s => ({
+      이름: s.name || '',
+      성별: s.gender || '',
+      학년: s.grade || '',
+      학교: s.school || '',
+      주소: s.addr || '',
+      연락처: s.phone || '',
+      수강유형: s.feeType || '',
+      수강시간: s.slots?.join(',') || '',
+      수강료: s.fee || '',
+      등록일: s.regdate || '',
+      상태: s.status || '수강중',
+      메모: s.memo || '',
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stuData), '원생목록');
+  }
+
+  // 수업기록 시트
+  if (DB.length) {
+    const recData = DB.map(r => ({
+      날짜: r.date || '',
+      원생: r.studentName || '',
+      시간대: r.timeSlot || '',
+      출결: r.attendance === 'present' ? '출석' : r.attendance === 'absent' ? '결석' : '지각',
+      작품명: r.workName || '',
+      회차: r.workNum || '',
+      완성도: r.completion || '',
+      담당: r.teacher || '',
+      메모: r.note || '',
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(recData), '수업기록');
+  }
+
+  // 수강료 시트
+  const yr = new Date().getFullYear();
+  const payData = [];
+  STUS.forEach(s => {
+    const pays = JSON.parse(localStorage.getItem(`pay_${s.id}_${yr}`) || '{}');
+    const row = { 원생: s.name, 연도: yr };
+    for (let m = 1; m <= 12; m++) {
+      row[`${m}월`] = pays[m] ? '납부' : '미납';
+    }
+    payData.push(row);
+  });
+  if (payData.length) {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(payData), '수강료납부');
+  }
+
+  // 매입매출 시트
+  const FINANCE = JSON.parse(localStorage.getItem('sa_finance') || '[]');
+  if (FINANCE.length) {
+    const finData = FINANCE.map(f => ({
+      날짜: f.date || '',
+      구분: f.kind === 'income' ? '매출' : '경비',
+      유형: f.type || '',
+      내용: f.desc || '',
+      금액: f.amount || 0,
+      결제수단: f.method || '',
+      메모: f.memo || '',
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(finData), '매입매출');
+  }
+
+  // 상담일지 시트
+  const COUNSELS_DATA = JSON.parse(localStorage.getItem('sa_counsels') || '[]');
+  if (COUNSELS_DATA.length) {
+    const counData = COUNSELS_DATA.map(c => ({
+      날짜: c.date || '',
+      원생: c.stuName || '',
+      유형: c.type || '',
+      내용: c.content || '',
+      결과: c.result || '',
+      다음상담: c.nextDate || '',
+      담당: c.staff || '',
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(counData), '상담일지');
+  }
+
+  // 파일 저장
+  const filename = `솔브아트_전체데이터_${today()}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  toast(`✅ ${filename} 다운로드 완료!`);
+}
+
+// ════════════════════════════════════════════
+//  9. 데이터 백업 & 복원
+// ════════════════════════════════════════════
+async function backupToFirestore() {
+  if (!FB_READY || !db) { toast('❌ Firestore 연결 필요'); return; }
+  showOv('Firestore 백업 중...');
+  let count = 0;
+  try {
+    // 로컬의 모든 수업기록 → Firestore 업로드
+    const localRecs = JSON.parse(localStorage.getItem('sa_db') || '[]');
+    for (const rec of localRecs) {
+      if (!rec._fid) {
+        const ref = await db.collection('records').add(rec);
+        rec._fid = ref.id;
+        count++;
+      }
+    }
+    localStorage.setItem('sa_db', JSON.stringify(localRecs));
+
+    // 로컬 수강료 → Firestore
+    const yr = new Date().getFullYear();
+    for (const s of STUS) {
+      const key = `pay_${s.id}_${yr}`;
+      const pays = JSON.parse(localStorage.getItem(key) || '{}');
+      if (Object.keys(pays).length) {
+        await db.collection('payments').doc(key).set(pays);
+        count++;
+      }
+    }
+
+    toast(`✅ 백업 완료! ${count}건 업로드`);
+  } catch (e) {
+    toast('❌ 백업 실패: ' + e.message);
+  }
+  hideOv();
+}
+
+// ════════════════════════════════════════════
+//  10. DB 상태 대시보드 (관리자용)
+// ════════════════════════════════════════════
+async function showDBStatus() {
+  const modal = el('modal-stat-detail');
+  const title = el('stat-detail-title');
+  const body = el('stat-detail-body');
+  if (!modal || !title || !body) return;
+
+  title.textContent = '🗄️ DB 데이터 현황';
+
+  const yr = new Date().getFullYear();
+  const localRecs = JSON.parse(localStorage.getItem('sa_db') || '[]');
+  const localFinance = JSON.parse(localStorage.getItem('sa_finance') || '[]');
+  const localCounsels = JSON.parse(localStorage.getItem('sa_counsels') || '[]');
+  const localClasses = JSON.parse(localStorage.getItem('sa_classes') || '[]');
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.8rem;">
+      ${[
+        ['👥 원생', STUS.length + '명', 'var(--sage)'],
+        ['📋 수업기록', localRecs.length + '건', 'var(--blue)'],
+        ['💬 상담일지', localCounsels.length + '건', '#9C27B0'],
+        ['🏫 반', localClasses.length + '개', '#E65100'],
+        ['📒 매입매출', localFinance.length + '건', 'var(--accent)'],
+        ['🔥 Firestore', FB_READY ? '연결됨' : '오프라인', FB_READY ? 'var(--sage)' : 'var(--accent)'],
+      ].map(([label, val, color]) => `
+        <div style="background:var(--gold-pale);border-radius:10px;padding:.7rem;border:1.5px solid var(--border);text-align:center;">
+          <div style="font-size:.7rem;color:var(--muted);">${label}</div>
+          <div style="font-size:1.2rem;font-weight:900;color:${color};">${val}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.4rem;">
+      <button class="btn btn-gold btn-sm" style="width:100%;" onclick="exportAllDataToExcel()">
+        📥 전체 데이터 Excel 내보내기
+      </button>
+      <button class="btn btn-b btn-sm" style="width:100%;" onclick="backupToFirestore()">
+        ☁️ Firestore 전체 백업
+      </button>
+      <button class="btn btn-o btn-sm" style="width:100%;" onclick="loadAllDataFromDB()">
+        🔄 전체 데이터 새로고침
+      </button>
+    </div>
+    <div style="font-size:.68rem;color:var(--muted);margin-top:.6rem;text-align:center;">
+      마지막 동기화: ${new Date().toLocaleString('ko-KR')}
+    </div>
+  `;
+  modal.classList.add('show');
+}
+
 
 // ════════════════════════════════════════════
 //  GOOGLE DRIVE 연동
