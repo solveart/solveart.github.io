@@ -586,6 +586,24 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
     <div id="churn-alert-list"></div>
   </div>
 
+
+  <!-- AI 어시스턴트 바로가기 -->
+  <div class="card" id="ai-home-card" style="border:2px solid var(--gold);background:linear-gradient(135deg,#fff,#FFF8E1);">
+    <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>🤖 솔브아트 AI 어시스턴트</span>
+      <button class="btn btn-gold btn-sm" onclick="nav('ai')">AI 열기</button>
+    </div>
+    <div style="font-size:.75rem;color:var(--muted);line-height:1.7;">
+      원생별 리포트, 학부모 문자, 수업계획, 이탈위험 분석을 자동 프롬프트로 만들어 Claude.ai 또는 ChatGPT에 붙여넣어 사용할 수 있어요.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.7rem;">
+      <button class="btn btn-o btn-sm" onclick="nav('ai');setTimeout(()=>aiTab('report'),100);">📝 리포트</button>
+      <button class="btn btn-o btn-sm" onclick="nav('ai');setTimeout(()=>aiTab('msg'),100);">📲 문자</button>
+      <button class="btn btn-o btn-sm" onclick="nav('ai');setTimeout(()=>aiTab('tools'),100);">🧰 도구</button>
+      <button class="btn btn-o btn-sm" onclick="nav('ai');setTimeout(()=>aiTab('analysis'),100);">📊 분석</button>
+    </div>
+  </div>
+
   <!-- 최근 스캔 기록 -->
   <div class="card">
     <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
@@ -1572,6 +1590,7 @@ header{background:var(--ink);color:#fff;height:var(--header-h);display:flex;alig
   <button class="nitem on" onclick="nav('home')"><span class="ic">🏠</span>홈</button>
   <button class="nitem" onclick="nav('scan')"><span class="ic">📷</span>스캔</button>
   <button class="nitem" onclick="nav('students')"><span class="ic">👥</span>원생</button>
+  <button class="nitem" onclick="nav('ai')"><span class="ic">🤖</span>AI</button>
   <button class="nitem" onclick="nav('report')"><span class="ic">📊</span>보고서</button>
   <button class="nitem" onclick="nav('admin')"><span class="ic">⚙️</span>관리자</button>
 </nav>

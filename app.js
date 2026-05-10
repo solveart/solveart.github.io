@@ -1364,8 +1364,11 @@ function nav(id, pushStateFlag=true){
   // 바텀네비 활성화
   document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('on'));
   const isA=CP.role==='admin';
-  const mobileMap=isA?{home:0,scan:1,students:2,report:3,admin:4}:{home:0,scan:1,students:2,hist:3,mypage:4};
-  if(mobileMap[id]!==undefined)document.querySelectorAll('.nitem')[mobileMap[id]]?.classList.add('on');
+  const navScope = isA ? el('bnav-a') : el('bnav-t');
+  const mobileMap=isA
+    ? {home:0,scan:1,students:2,ai:3,report:4,admin:5}
+    : {home:0,lesson:1,students:2,ai:3,hist:4,mypage:5};
+  if(navScope && mobileMap[id]!==undefined)navScope.querySelectorAll('.nitem')[mobileMap[id]]?.classList.add('on');
 
   // 사이드바 활성화
   document.querySelectorAll('#sidebar .sn-item').forEach(n=>n.classList.remove('on'));
@@ -1383,6 +1386,13 @@ function nav(id, pushStateFlag=true){
   if(id==='students'){renderStudents();updStuSelects();}
   if(id==='admin')loadTeachers();
   if(id==='mypage')initMyPage();
+  if(id==='ai'){
+    const cont = el('ai-page-content');
+    if(cont && typeof renderAIPage === 'function'){
+      cont.innerHTML = renderAIPage();
+      if(typeof aiTab === 'function') aiTab('chat');
+    }
+  }
   if(id==='result'){}
   syncPageTopNav(id);
   window.scrollTo({top:0, behavior:'smooth'});

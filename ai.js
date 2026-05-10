@@ -77,7 +77,22 @@ function buildAcademyContext(options = {}) {
   }).length;
   ctx += `\n[이달 수납] 납부 ${paid}명 / 미납 ${activeStus.length-paid}명\n`;
 
-  // 4. 지식 베이스 (원장님이 입력한 규칙)
+  // 4. 최근 운영 요약
+  const recentRecs = DB.filter(r => r.date && new Date(r.date) >= monthsAgo);
+  if (recentRecs.length) {
+    const present = recentRecs.filter(r => r.attendance === 'present').length;
+    const absent = recentRecs.filter(r => r.attendance === 'absent').length;
+    const late = recentRecs.filter(r => r.attendance === 'late').length;
+    const comps = recentRecs.filter(r => Number(r.completion) > 0).map(r => Number(r.completion));
+    const avg = comps.length ? (comps.reduce((a,b)=>a+b,0)/comps.length).toFixed(1) : '-';
+    const works = {};
+    recentRecs.forEach(r => { if(r.workName) works[r.workName] = (works[r.workName]||0)+1; });
+    const topWorks = Object.entries(works).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([w,n])=>`${w}(${n}회)`).join(', ');
+    ctx += `\n[최근 ${months}개월 운영 요약] 기록 ${recentRecs.length}건 / 출석 ${present} / 결석 ${absent} / 지각 ${late} / 평균완성도 ${avg}/5\n`;
+    if(topWorks) ctx += `주요 수업/작품: ${topWorks}\n`;
+  }
+
+  // 5. 지식 베이스 (원장님이 입력한 규칙)
   if (AI_CFG.kbRules) ctx += `\n[학원 운영 규칙]\n${AI_CFG.kbRules}\n`;
   if (AI_CFG.kbCurriculum) ctx += `\n[수업 커리큘럼]\n${AI_CFG.kbCurriculum}\n`;
   if (AI_CFG.kbReportEx) ctx += `\n[리포트 예시]\n${AI_CFG.kbReportEx}\n`;
@@ -253,6 +268,7 @@ function renderAIPage() {
     <button class="tab on" id="ai-tab-chat" onclick="aiTab('chat',this)">💬 질문하기</button>
     <button class="tab" id="ai-tab-report" onclick="aiTab('report',this)">📝 리포트</button>
     <button class="tab" id="ai-tab-msg" onclick="aiTab('msg',this)">📲 문자초안</button>
+    <button class="tab" id="ai-tab-tools" onclick="aiTab('tools',this)">🧰 도구</button>
     <button class="tab" id="ai-tab-analysis" onclick="aiTab('analysis',this)">📊 분석</button>
     <button class="tab" id="ai-tab-kb" onclick="aiTab('kb',this)">📚 지식설정</button>
     <button class="tab" id="ai-tab-settings" onclick="aiTab('settings',this)">⚙️</button>
@@ -294,6 +310,8 @@ function renderAIPage() {
           ['📚 커리큘럼 추천', '각 원생의 수준에 맞는 다음 수업 커리큘럼을 추천해줘'],
           ['📈 운영 분석', '이달 학원 운영 현황을 분석하고 개선점을 알려줘'],
           ['🎨 작품 평가', '원생들의 완성도 추이를 분석하고 발전 방향을 제안해줘'],
+          ['🧭 보강 계획', '결석 원생의 보강 우선순위와 안내 문구를 작성해줘'],
+          ['📣 홍보 문구', '이번 달 수업 성과를 바탕으로 인스타그램 홍보 문구를 작성해줘'],
         ].map(([label, q]) => `
           <button class="btn btn-sm"
             style="font-size:.68rem;background:var(--gold-pale);border:1px solid var(--gold-light);"
@@ -444,6 +462,47 @@ function renderAIPage() {
       </div>
       <div id="ai-msg-text" style="font-size:.72rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;
         background:#f5f5f3;padding:.7rem;border-radius:8px;color:#333;line-height:1.6;"></div>
+    </div>
+  </div>
+
+
+  <!-- ─── 🧰 AI 운영 도구 ─── -->
+  <div id="ai-panel-tools" style="display:none;">
+    <div class="card" style="padding:.9rem;">
+      <div class="ctitle">🧰 AI 운영 도구</div>
+      <div style="font-size:.72rem;color:var(--muted);line-height:1.6;margin-bottom:.7rem;">
+        버튼을 누르면 학원 데이터가 포함된 전문 프롬프트가 자동 생성·복사됩니다.
+      </div>
+      <div class="fg"><label>원생 선택 (선택사항)</label>
+        <select id="ai-tool-stu" class="inp"><option value="">전체 원생/학원 기준</option>${stuOptions}</select>
+      </div>
+      <div class="fg"><label>추가 조건</label>
+        <input id="ai-tool-extra" class="inp" placeholder="예: 5월 기준, 초등 저학년 중심, 카카오톡용, 160자 이내">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem;">
+        ${[
+          ['lessonPlan','🗓 주간 수업계획'],
+          ['makeup','🧭 보강 우선순위'],
+          ['counsel','☎ 상담 스크립트'],
+          ['artFeedback','🎨 작품 피드백'],
+          ['portfolio','🖼 포트폴리오 방향'],
+          ['promotion','📣 홍보 콘텐츠'],
+          ['riskMsg','🚨 이탈위험 대응'],
+          ['notice','📌 공지문 작성'],
+        ].map(([type,label])=>`
+          <button class="btn btn-o btn-sm" onclick="generateAITool('${type}')">${label}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div id="ai-tool-preview" style="display:none;" class="card">
+      <div class="ctitle" style="display:flex;justify-content:space-between;align-items:center;">
+        <span id="ai-tool-label">도구 프롬프트</span>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end;">
+          <button onclick="copyAIResult('ai-tool-text')" class="btn btn-o btn-sm">📋 다시 복사</button>
+          <a href="https://claude.ai" target="_blank" class="btn btn-gold btn-sm">🚀 Claude.ai</a><a href="https://chatgpt.com/" target="_blank" class="btn btn-g btn-sm">🚀 ChatGPT</a>
+        </div>
+      </div>
+      <div id="ai-tool-text" style="font-size:.72rem;white-space:pre-wrap;max-height:240px;overflow-y:auto;background:#f5f5f3;padding:.7rem;border-radius:8px;color:#333;line-height:1.6;"></div>
     </div>
   </div>
 
@@ -605,7 +664,7 @@ function renderAIPage() {
 //  탭 전환
 // ════════════════════════════════════════════
 function aiTab(tab, btn) {
-  ['chat','report','msg','analysis','kb','settings'].forEach(t => {
+  ['chat','report','msg','tools','analysis','kb','settings'].forEach(t => {
     const p = el('ai-panel-' + t);
     if(p) p.style.display = 'none';
     const b = el('ai-tab-' + t);
@@ -752,6 +811,46 @@ ${extra ? '추가 정보: ' + extra : ''}
   el('ai-msg-preview').style.display = 'block';
   el('ai-msg-text').textContent = prompt.slice(0, 600) + '...';
   toast('📋 문자 프롬프트 복사! Claude.ai 또는 ChatGPT에 붙여넣기 하세요');
+}
+
+
+// ════════════════════════════════════════════
+//  AI 운영 도구 프롬프트 생성
+// ════════════════════════════════════════════
+async function generateAITool(type) {
+  const stuName = gv('ai-tool-stu');
+  const extra = gv('ai-tool-extra');
+  const labels = {
+    lessonPlan:'🗓 주간 수업계획', makeup:'🧭 보강 우선순위', counsel:'☎ 상담 스크립트',
+    artFeedback:'🎨 작품 피드백', portfolio:'🖼 포트폴리오 방향', promotion:'📣 홍보 콘텐츠',
+    riskMsg:'🚨 이탈위험 대응', notice:'📌 공지문 작성'
+  };
+  const instructions = {
+    lessonPlan:'최근 수업기록과 완성도를 바탕으로 다음 1주일 수업계획을 원생 수준별로 작성해줘. 준비물, 수업목표, 난이도, 교사 메모를 표 형태로 정리해줘.',
+    makeup:'최근 결석·지각 기록을 기준으로 보강 우선순위를 정하고, 학부모에게 보낼 안내 문구와 내부 관리 체크리스트를 만들어줘.',
+    counsel:'선택한 원생 또는 전체 원생의 상담 포인트를 정리하고, 학부모 상담 전화 스크립트와 예상 질문 답변을 작성해줘.',
+    artFeedback:'최근 작품명, 회차, 완성도를 바탕으로 작품별 장점·보완점·다음 과제를 학부모가 이해하기 쉬운 말로 작성해줘.',
+    portfolio:'원생의 최근 작업 흐름을 바탕으로 포트폴리오 구성 방향, 보완 작품, 추천 주제, 4주 실행계획을 작성해줘.',
+    promotion:'최근 수업 성과와 학원 분위기를 바탕으로 블로그/인스타그램 홍보 콘텐츠를 작성해줘. 개인정보가 드러나지 않게 표현해줘.',
+    riskMsg:'출석 저하, 완성도 하락, 미납 가능성을 기준으로 이탈위험 원생을 분석하고, 단계별 대응 메시지와 관리표를 작성해줘.',
+    notice:'학부모 공지문을 작성해줘. 제목, 본문, 카카오톡 짧은 문구, 안내사항 체크리스트를 함께 만들어줘.'
+  };
+  const question = `${instructions[type] || instructions.lessonPlan}\n${stuName ? '대상 원생: '+stuName : '대상: 전체 원생/학원'}\n${extra ? '추가 조건: '+extra : ''}\n작성 기준: 따뜻하지만 전문적인 말투, 실제 학원 운영자가 바로 사용할 수 있는 문장, 표가 필요한 경우 표로 정리.`;
+  const prompt = buildClaudePrompt(question, { stuName, months: 3, includeAll: !stuName });
+  lastPrompt = prompt;
+  lastPromptTarget = 'both';
+  try { await navigator.clipboard.writeText(prompt); } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = prompt; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  const prev = el('ai-tool-preview');
+  const text = el('ai-tool-text');
+  const label = el('ai-tool-label');
+  if(label) label.textContent = labels[type] || 'AI 운영 도구';
+  if(text) text.textContent = prompt.slice(0, 900) + (prompt.length > 900 ? '\n...(이하 생략)' : '');
+  if(prev) { prev.style.display='block'; prev.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+  toast('📋 '+(labels[type]||'도구')+' 프롬프트 복사 완료!');
 }
 
 // ════════════════════════════════════════════
